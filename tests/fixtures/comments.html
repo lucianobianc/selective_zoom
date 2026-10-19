@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Página de teste — Selective Zoom</title>
+<style>body { font: 16px sans-serif; max-width: 720px; margin: 40px auto; } .comment { padding: 8px; } .comment-text { font-size: 16px; } .caption { font-size: 12px; }</style>
+<h1>Comentários</h1>
+<section class="comments">
+  <article class="comment"><p class="comment-text">Primeiro comentário de teste.</p></article>
+  <article class="comment"><p class="comment-text">Segundo comentário de teste.</p></article>
+  <article class="comment"><p class="comment-text">Terceiro comentário de teste.</p></article>
+</section>
+<p class="caption">Legenda independente dos comentários.</p>
+<a class="test-link" href="#navigated">Link para testar a seleção sem navegar</a>
+<button id="add-comment">Adicionar comentário</button>
+<input aria-label="Campo sensível" value="Não selecionar controles">
+<script>
+  document.querySelector('#add-comment').onclick = () => {
+    const article = document.createElement('article');
+    article.className = 'comment';
+    const p = document.createElement('p');
+    p.className = 'comment-text';
+    p.textContent = 'Comentário inserido dinamicamente.';
+    article.append(p);
+    document.querySelector('.comments').append(article);
+  };
+</script>
+</html>
