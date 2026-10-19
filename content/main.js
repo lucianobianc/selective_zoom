@@ -2,23 +2,39 @@
 (() => {
   "use strict";
   const SZ = globalThis.SelectiveZoom;
-  let indicator;
-  const close = () => { selection.stop(); indicator?.remove(); indicator = null; };
+  const styles = new SZ.Styles();
+  let panel, target, attribute;
+  const close = () => {
+    selection.stop();
+    styles.clearPreview();
+    if (target && attribute) target.removeAttribute(attribute);
+    target = attribute = null;
+    panel?.remove();
+    panel = null;
+  };
   const selection = new SZ.Selection({
     onSelect(element) {
-      indicator.textContent = `Selecionado: ${element.textContent.trim().slice(0, 80)} — clique na extensão para sair`;
+      target = element;
+      attribute = `data-sz-${crypto.randomUUID()}`;
+      target.setAttribute(attribute, "");
+      const size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
+      panel.edit(size);
+      styles.showPreview(`[${attribute}]`, size);
     },
     onCancel: close
   });
+  window.addEventListener("keydown", (event) => {
+    if (panel && event.key === "Escape") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      close();
+    }
+  }, true);
   browser.runtime.onMessage.addListener((message) => {
     if (message.type !== "selective-zoom:toggle") return;
-    if (indicator) return close();
-    indicator = document.createElement("div");
-    indicator.setAttribute("data-selective-zoom", "status");
-    indicator.setAttribute("role", "status");
-    indicator.textContent = "Selective Zoom — selecione um texto; Escape cancela";
-    indicator.style.cssText = "position:fixed;right:16px;top:16px;z-index:2147483647;background:#172554;color:white;padding:12px;border-radius:8px;font:14px sans-serif";
-    document.documentElement.append(indicator);
+    if (panel) return close();
+    panel = new SZ.Panel({ onCancel: close, onSize: (size) => styles.showPreview(`[${attribute}]`, size) });
+    panel.selecting();
     selection.start();
   });
 })();

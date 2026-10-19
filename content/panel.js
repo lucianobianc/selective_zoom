@@ -1,0 +1,65 @@
+(() => {
+  "use strict";
+  const SZ = globalThis.SelectiveZoom ||= {};
+  SZ.Panel = class {
+    constructor({ onCancel, onSize, onSave }) {
+      this.onSize = onSize;
+      this.onSave = onSave;
+      this.host = document.createElement("div");
+      this.host.setAttribute("data-selective-zoom", "panel");
+      this.host.style.cssText = "all:initial!important;position:fixed!important;top:16px!important;right:16px!important;z-index:2147483647!important;color-scheme:light!important";
+      this.root = this.host.attachShadow({ mode: "open" });
+      this.root.innerHTML = `
+        <style>
+          :host { font: 14px/1.5 system-ui,sans-serif; color:#172554; }
+          * { box-sizing:border-box; }
+          section { width:min(340px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; background:#fff; border:2px solid #1d4ed8; border-radius:12px; padding:16px; box-shadow:0 8px 32px #0004; }
+          h2 { font-size:18px; margin:0 0 8px; }
+          p { margin:8px 0; }
+          button,input { font:inherit; }
+          button { cursor:pointer; background:#eff6ff; color:#172554; border:1px solid #2563eb; border-radius:6px; padding:7px 10px; margin:4px 4px 0 0; }
+          button:disabled { cursor:default; opacity:.55; }
+          :focus-visible { outline:3px solid #ca8a04; outline-offset:2px; }
+          input[type=number] { width:80px; padding:5px; }
+          input[type=range] { width:100%; }
+          [hidden] { display:none!important; }
+          .error { color:#b91c1c; }
+        </style>
+        <section aria-label="Selective Zoom" role="dialog">
+          <h2>Selective Zoom</h2>
+          <p id="status" role="status" aria-live="polite"></p>
+          <div id="editor" hidden>
+            <label for="size">Tamanho da fonte (px)</label>
+            <input id="size" type="number" min="6" max="128" step="1">
+            <input id="range" aria-label="Ajustar tamanho da fonte" type="range" min="6" max="128" step="1">
+            <p id="error" class="error" role="alert"></p>
+            <button id="save" disabled>Salvar</button>
+          </div>
+          <button id="cancel">Cancelar</button>
+        </section>`;
+      this.get("cancel").addEventListener("click", onCancel);
+      for (const name of ["size", "range"]) this.get(name).addEventListener("input", () => {
+        const size = Number(this.get(name).value);
+        if (name === "range") this.get("size").value = size;
+        else if (SZ.validSize(size)) this.get("range").value = size;
+        this.get("error").textContent = SZ.validSize(size) ? "" : "Use um número inteiro entre 6 e 128 px.";
+        this.onSize(size);
+      });
+      this.get("save").addEventListener("click", () => this.onSave?.());
+      document.documentElement.append(this.host);
+    }
+    get(id) { return this.root.getElementById(id); }
+    selecting() {
+      this.get("status").textContent = "Selecione um texto na página. Escape cancela.";
+      this.get("editor").hidden = true;
+    }
+    edit(size) {
+      this.get("editor").hidden = false;
+      this.get("status").textContent = "Selecionado: prévia temporária em 1 elemento.";
+      this.get("size").value = size;
+      this.get("range").value = size;
+      this.get("size").focus();
+    }
+    remove() { this.host.remove(); }
+  };
+})();

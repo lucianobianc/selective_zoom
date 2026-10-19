@@ -25,6 +25,8 @@
       ],
       "js": [
         "content/selection.js",
+        "content/styles.js",
+        "content/panel.js",
         "content/main.js"
       ],
       "run_at": "document_idle"
