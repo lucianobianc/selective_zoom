@@ -3,7 +3,7 @@
   "use strict";
   const SZ = globalThis.SelectiveZoom;
   const styles = new SZ.Styles();
-  let panel, proposal, size, confirmed = false, busy = false, loadError;
+  let panel, proposal, size, confirmed = false, busy = false, loadError, previousFocus;
   const request = async (type, fields = {}) => {
     const result = await browser.runtime.sendMessage({ type: `selective-zoom:${type}`, ...fields });
     if (!result?.ok) throw new Error(result?.error || 'Não foi possível acessar as regras locais.');
@@ -19,6 +19,7 @@
     confirmed = false;
     panel?.remove();
     panel = null;
+    if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
   };
   const refreshSave = () => {
     if (panel) panel.get('save').disabled = busy || !proposal || !confirmed || !SZ.validSize(size) || !!loadError;
@@ -30,6 +31,7 @@
       if (!proposal) return panel.unavailable();
       size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
       panel.edit(size, proposal);
+      if (loadError) panel.get("error").textContent = loadError;
       styles.showPreview(proposal.selector, size);
       refreshSave();
     },
@@ -46,6 +48,7 @@
     if (message.type !== 'selective-zoom:toggle') return;
     await ready;
     if (panel) return close();
+    previousFocus = document.activeElement;
     panel = new SZ.Panel({
       onCancel: close,
       onList: async () => {

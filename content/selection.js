@@ -4,7 +4,8 @@
   const excluded = "script,style,noscript,template,input,textarea,select,option,button,iframe,object,embed,[contenteditable]:not([contenteditable=false]),[role=textbox],[data-selective-zoom]";
   SZ.isTextElement = (element) => element instanceof Element &&
     !["HTML", "BODY"].includes(element.tagName) && !element.closest(excluded) &&
-    element.getRootNode() === document && !!element.textContent.trim();
+    element.getRootNode() === document && !!element.textContent.trim() &&
+    !element.querySelector("input,textarea,select,button,[contenteditable]:not([contenteditable=false]),[role=textbox]");
 
   SZ.Selection = class {
     constructor({ onSelect, onCancel }) {
@@ -23,12 +24,41 @@
         this.stop();
         this.onSelect(target);
       };
+      this.reposition = () => this.highlight(this.target);
       this.key = (event) => {
         if (event.key === "Escape") {
           event.preventDefault();
           event.stopImmediatePropagation();
           this.stop();
           this.onCancel();
+          return;
+        }
+        const source = event.composedPath()[0];
+        if (source instanceof Element && source.closest("button,input,select,textarea")) return;
+        if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          const elements = [], seen = new Set();
+          let node;
+          while ((node = walker.nextNode()) && elements.length < 500) {
+            const element = node.parentElement;
+            if (node.textContent.trim() && SZ.isTextElement(element) && !seen.has(element) && element.getClientRects().length) {
+              elements.push(element); seen.add(element);
+            }
+          }
+          if (!elements.length) return;
+          const index = elements.indexOf(this.target);
+          const next = index < 0 ? (event.key === "ArrowDown" ? 0 : elements.length - 1) :
+            (index + (event.key === "ArrowDown" ? 1 : -1) + elements.length) % elements.length;
+          elements[next].scrollIntoView({ block: "nearest" });
+          this.highlight(elements[next]);
+        } else if (event.key === "Enter" && SZ.isTextElement(this.target)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const target = this.target;
+          this.stop();
+          this.onSelect(target);
         }
       };
     }
@@ -48,8 +78,11 @@
       window.addEventListener("pointerup", this.suppress, true);
       window.addEventListener("click", this.click, true);
       window.addEventListener("keydown", this.key, true);
+      window.addEventListener("scroll", this.reposition, true);
+      window.addEventListener("resize", this.reposition);
     }
     highlight(element) {
+      this.target = SZ.isTextElement(element) ? element : null;
       this.box.style.display = "none";
       if (!SZ.isTextElement(element)) return;
       const rect = element.getBoundingClientRect();
@@ -63,6 +96,9 @@
       window.removeEventListener("pointerup", this.suppress, true);
       window.removeEventListener("click", this.click, true);
       window.removeEventListener("keydown", this.key, true);
+      window.removeEventListener("scroll", this.reposition, true);
+      window.removeEventListener("resize", this.reposition);
+      this.target = null;
     }
   };
 })();

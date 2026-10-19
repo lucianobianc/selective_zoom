@@ -61,13 +61,17 @@
     }
     get(id) { return this.root.getElementById(id); }
     selecting() {
-      this.get("status").textContent = "Selecione um texto na página. Escape cancela.";
+      this.get("status").textContent = "Selecione um texto com o mouse ou use ↑/↓ e Enter. Escape cancela.";
       this.get("editor").hidden = true;
       this.get("list").hidden = true;
       this.get("reselect").hidden = true;
       this.get("error").textContent = "";
+      this.get("status").tabIndex = -1;
+      this.get("status").focus();
     }
     edit(size, proposal) {
+      this.get("list").hidden = true;
+      this.get("error").textContent = "";
       this.get("editor").hidden = false;
       this.get("confirm").checked = false;
       this.get("reselect").hidden = false;

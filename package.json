@@ -6,8 +6,10 @@
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "test:browser": "playwright test",
-    "lint:extension": "web-ext lint --source-dir . --ignore-files 'node_modules/**' 'test-results/**' 'playwright-report/**' 'tests/**' 'package*.json' 'playwright.config.cjs' '*.md'",
-    "build": "web-ext build --source-dir . --artifacts-dir web-ext-artifacts --overwrite-dest --ignore-files 'node_modules/**' 'test-results/**' 'playwright-report/**' 'tests/**' 'package*.json' 'playwright.config.cjs' '*.md'"
+    "lint:extension": "web-ext lint --config web-ext.config.cjs",
+    "build": "web-ext build --config web-ext.config.cjs",
+    "dev": "web-ext run --config web-ext.config.cjs",
+    "test:firefox": "python3 tests/firefox_smoke.py"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

@@ -133,3 +133,14 @@ test('two independent rules coexist and deleting one restores only its text', as
   await expect(page.locator('.caption')).toHaveCSS('font-size', '12px');
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('Nenhuma regra');
 });
+test('keyboard can select text, edit and cancel without navigating', async ({ page }) => {
+  await load(page);
+  await page.keyboard.press('ArrowDown'); // Heading
+  await page.keyboard.press('ArrowDown'); // First comment
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-selective-zoom=panel] #size')).toBeFocused();
+  await page.locator('[data-selective-zoom=panel] #size').fill('28');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '28px');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
+});
