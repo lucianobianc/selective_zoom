@@ -6,9 +6,10 @@ async function load(page) {
   await page.evaluate(() => {
     const key = `selective-zoom:v1:${location.origin}`;
     window.browser = {
+      menus: { getTargetElement: () => window.menuTarget },
       storage: { onChanged: { addListener() {} } },
       runtime: {
-        onMessage: { addListener(fn) { window.toggleExtension = () => fn({ type: 'selective-zoom:toggle' }); } },
+        onMessage: { addListener(fn) { window.extensionMessage = fn; window.toggleExtension = () => fn({ type: 'selective-zoom:toggle' }); } },
         async sendMessage(message) {
           if (window.storageError) return { ok: false, error: 'Falha de armazenamento de teste' };
           let record = JSON.parse(localStorage.getItem(key) || 'null') || { version: 1, origin: location.origin, rules: [] };
@@ -161,4 +162,34 @@ test('panel keeps readable colors and typography on dark pages', async ({ page }
   await expect(panel.locator('label[for=size]')).toHaveCSS('color', 'rgb(23, 37, 84)');
   await expect(panel.locator('#size')).toHaveCSS('color-scheme', 'light');
   await page.screenshot({ path: 'test-results/panel-dark-page.png' });
+});
+test('context action edits clicked text and replaces an existing panel', async ({ page }) => {
+  await load(page);
+  await page.evaluate(() => {
+    window.menuTarget = document.querySelector('.comment-text');
+    return window.extensionMessage({ type: 'selective-zoom:context', targetElementId: 42 });
+  });
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel).toHaveCount(1);
+  await expect(panel.locator('#status')).toContainText('3 elemento(s)');
+  await panel.locator('#size').fill('30');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '30px');
+  await page.evaluate(() => {
+    window.menuTarget = document.querySelector('.caption');
+    return window.extensionMessage({ type: 'selective-zoom:context', targetElementId: 43 });
+  });
+  await expect(panel).toHaveCount(1);
+  await expect(panel.locator('#selector')).toHaveText('p.caption');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
+});
+test('context action on sensitive or missing targets starts safe selection', async ({ page }) => {
+  await load(page);
+  for (const selector of ['input', '.missing']) {
+    await page.evaluate((selector) => {
+      window.menuTarget = document.querySelector(selector);
+      return window.extensionMessage({ type: 'selective-zoom:context', targetElementId: 42 });
+    }, selector);
+    await expect(page.locator('[data-selective-zoom=panel] #editor')).toBeHidden();
+    await expect(page.locator('[data-selective-zoom=highlight]')).toHaveCount(1);
+  }
 });

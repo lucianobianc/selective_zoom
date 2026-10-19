@@ -3,10 +3,12 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const crypto = require('node:crypto').webcrypto;
-function background() {
+function background({ onMenuCreated = () => {}, onMenuListener = () => {}, onSendMessage = () => {} } = {}) {
   const data = {}, listeners = [];
   const browser = {
-    browserAction: { onClicked: { addListener() {} } },
+    browserAction: { onClicked: { addListener() {} }, async setTitle() {} },
+    menus: { async removeAll() {}, create: onMenuCreated, onClicked: { addListener: onMenuListener } },
+    tabs: { sendMessage: onSendMessage },
     runtime: { onMessage: { addListener(fn) { listeners.push(fn); } } },
     storage: { local: {
       async get(key) { await new Promise((resolve) => setTimeout(resolve, 1)); return { [key]: structuredClone(data[key]) }; },
@@ -36,4 +38,21 @@ test('invalid requests cannot poison the queue or access storage from a subframe
   assert.equal((await send({ type: 'selective-zoom:load' })).ok, true);
   assert.equal((await send({ type: 'selective-zoom:load' }, { tab: { id: 1 }, url: 'https://one.test', frameId: 1 })).ok, false);
   assert.equal((await send({ type: 'selective-zoom:load' }, {})).ok, false);
+});
+test('context menu registers for websites and forwards the native target to the main frame', async () => {
+  let item, click;
+  const sent = [];
+  background({ onMenuCreated: (menu) => { item = menu; }, onMenuListener: (listener) => { click = listener; }, onSendMessage: (...args) => sent.push(args) });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(item.title, 'Selective Zoom — ajustar texto');
+  assert.ok(item.contexts.includes('selection'));
+  await click({ menuItemId: item.id, targetElementId: 42, frameId: 0 }, { id: 7 });
+  assert.equal(sent[0][0], 7);
+  assert.equal(sent[0][1].type, 'selective-zoom:context');
+  assert.equal(sent[0][1].targetElementId, 42);
+  assert.equal(sent[0][2].frameId, 0);
+  await click({ menuItemId: 'unrelated' }, { id: 7 });
+  assert.equal(sent.length, 1);
+  await click({ menuItemId: item.id, targetElementId: 99, frameId: 1 }, { id: 7 });
+  assert.equal(sent[1][1].targetElementId, undefined);
 });

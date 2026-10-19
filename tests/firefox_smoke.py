@@ -214,6 +214,30 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.wait_size(".comment-text", 16)
         self.escape()
 
+    def test_05_native_context_menu_and_dark_page(self):
+        self.navigate()
+        self.driver.execute_script("document.documentElement.style.colorScheme='dark';document.body.style.color='#e4e6eb';document.body.style.background='#242526'")
+        # Also allow the native context menu while selection mode is active.
+        self.toggle()
+        target = self.driver.find_elements(By.CSS_SELECTOR, '.comment-text')[1]
+        ActionChains(self.driver).context_click(target).perform()
+        self.driver.set_context('chrome')
+        try:
+            self.wait.until(lambda d: d.execute_script("return document.getElementById('contentAreaContextMenu').state === 'open'"))
+            menu = self.wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'menuitem[label="Selective Zoom — ajustar texto"]'))
+            self.driver.execute_script("arguments[0].doCommand();document.getElementById('contentAreaContextMenu').hidePopup()", menu)
+        finally:
+            self.driver.set_context('content')
+        self.wait.until(lambda _d: self.panel() and self.control('editor').is_displayed())
+        self.assertIn('3 elemento(s)', self.control('status').text)
+        color = self.driver.execute_script("return getComputedStyle(document.querySelector('[data-selective-zoom=panel]').shadowRoot.querySelector('h2')).color")
+        self.assertEqual(color, 'rgb(23, 37, 84)')
+        self.control('size').clear()
+        self.control('size').send_keys('27')
+        self.wait_size('.comment-text', 27)
+        self.escape()
+        self.wait_size('.comment-text', 16)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -5,9 +5,9 @@ Execução em 18/10/2026, com Node.js 24.19.0, Chromium do ambiente e **Firefox 
 | Verificação | Resultado |
 | --- | --- |
 | Instalação reproduzível com `npm ci` | Passou |
-| `npm test` | 7 testes passaram |
-| `npm run test:browser` | 9 testes passaram, interface com Chromium e APIs simuladas |
-| `tests/firefox_smoke.py` | 4 testes passaram, extensão real no Firefox |
+| `npm test` | 8 testes passaram |
+| `npm run test:browser` | 12 testes passaram, interface com Chromium e APIs simuladas |
+| `tests/firefox_smoke.py` | 5 testes passaram, extensão real no Firefox |
 | `npm run lint:extension` | 0 erros, 0 notices e 1 aviso de compatibilidade Android |
 | `npm run build` | ZIP gerado; contém somente scripts, manifesto e licença |
 | YouTube real | Bloqueado pelo proxy do ambiente: CONNECT retornou HTTP 403 |
@@ -17,6 +17,8 @@ O aviso `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` refere-se à declaraç�
 ## Critérios de aceitação exercitados no Firefox
 
 - Carregamento do pacote e abertura pelo botão da extensão.
+- Abertura da edição pelo menu nativo do botão direito, inclusive com o modo de seleção ativo.
+- Cores e tipografia legíveis no painel em uma página com tema escuro.
 - Seleção de texto sem ativar o link subjacente.
 - Proposta de seletor, destaque e contagem dos três comentários.
 - Ajuste de fonte com prévia; Salvar desabilitado antes da confirmação.
@@ -37,4 +39,4 @@ A tentativa de acesso a `https://www.youtube.com/` recebeu HTTP 403 do proxy ant
 
 Para concluir a etapa em uma máquina com acesso ao YouTube: carregar a extensão, abrir um vídeo com comentários, selecionar um texto de comentário, conferir os destaques, ajustar/salvar, recarregar e remover a regra. Registrar qualquer falha de seletor ou limitação do DOM antes de propor uma correção específica. Consentimento, autenticação, estrutura dinâmica e disponibilidade dos comentários podem afetar esse teste.
 
-A implementação está organizada em sete commits conforme os estágios do roadmap. A etapa 7 tem validação local concluída e essa pendência externa explícita. Não houve assinatura, publicação na loja ou teste manual com leitor de tela.
+A implementação inicial está organizada em sete commits conforme os estágios do roadmap. A correção de contraste e a inclusão do menu contextual têm commits adicionais. A etapa 7 tem validação local concluída e essa pendência externa explícita. Não houve assinatura, publicação na loja ou teste manual com leitor de tela.

@@ -6,7 +6,7 @@ Extensão para **Firefox desktop 140+** que ajusta o tamanho de grupos de textos
 
 1. Abra `about:debugging#/runtime/this-firefox` no Firefox.
 2. Clique em **Carregar extensão temporária** e escolha `manifest.json`.
-3. Abra uma página HTTP(S), recarregue-a se já estava aberta e clique no botão **Selective Zoom** da extensão. Se necessário, fixe-o na barra pelo menu de extensões.
+3. Abra uma página HTTP(S), recarregue-a se já estava aberta e clique no botão **Selective Zoom** da extensão. Você também pode clicar com o botão direito sobre um texto e escolher **Selective Zoom — ajustar texto** para abrir a edição diretamente nele. Se necessário, fixe-o na barra pelo menu de extensões.
 4. Passe o mouse sobre um texto e clique para selecioná-lo. O clique não abre o link da página.
 5. Confira os elementos destacados, a quantidade e as amostras no painel. Ajuste o tamanho entre **6 e 128 px** e marque a confirmação antes de **Salvar**.
 6. Para rejeitar a proposta, use **Selecionar outro texto**, **Cancelar** ou **Escape**. Cancelar restaura a apresentação anterior.
@@ -62,6 +62,7 @@ npm run build
 
 ## Privacidade e permissões
 
+- `menus`: adiciona a opção ao menu do botão direito e identifica o elemento clicado. Se o alvo não puder ser selecionado com segurança, abre o modo normal de seleção.
 - `storage`: guarda versão do esquema, origem e regras (ID, seletor e tamanho) em `browser.storage.local`, sem sincronização.
 - Acesso a páginas `http://*/*` e `https://*/*`: necessário para reaplicar regras automaticamente em novas visitas. O script roda somente no documento principal, sem iframes.
 - Não há permissões de histórico, cookies, requisições de rede ou leitura global de abas. Não há telemetria, envio de textos ou serviço externo; o manifesto declara que não coleta dados.

@@ -13,6 +13,7 @@
       this.onCancel = onCancel;
       this.move = (event) => this.highlight(event.target);
       this.suppress = (event) => {
+        if (event.button !== 0) return;
         if (event.composedPath().some((node) => node instanceof Element && node.hasAttribute("data-selective-zoom"))) return;
         event.preventDefault();
         event.stopImmediatePropagation();

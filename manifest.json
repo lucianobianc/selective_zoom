@@ -42,7 +42,8 @@
     }
   ],
   "permissions": [
-    "storage"
+    "storage",
+    "menus"
   ],
   "commands": {
     "_execute_browser_action": {

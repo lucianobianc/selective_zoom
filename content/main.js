@@ -24,17 +24,18 @@
   const refreshSave = () => {
     if (panel) panel.get('save').disabled = busy || !proposal || !confirmed || !SZ.validSize(size) || !!loadError;
   };
+  const editElement = (element) => {
+    proposal = SZ.Selectors.propose(element);
+    confirmed = false;
+    if (!proposal) return panel.unavailable();
+    size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
+    panel.edit(size, proposal);
+    if (loadError) panel.get("error").textContent = loadError;
+    styles.showPreview(proposal.selector, size);
+    refreshSave();
+  };
   const selection = new SZ.Selection({
-    onSelect(element) {
-      proposal = SZ.Selectors.propose(element);
-      confirmed = false;
-      if (!proposal) return panel.unavailable();
-      size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
-      panel.edit(size, proposal);
-      if (loadError) panel.get("error").textContent = loadError;
-      styles.showPreview(proposal.selector, size);
-      refreshSave();
-    },
+    onSelect: editElement,
     onCancel: close
   });
   window.addEventListener('keydown', (event) => {
@@ -45,9 +46,18 @@
     }
   }, true);
   browser.runtime.onMessage.addListener(async (message) => {
-    if (message.type !== 'selective-zoom:toggle') return;
+    const fromContextMenu = message.type === 'selective-zoom:context';
+    if (message.type !== 'selective-zoom:toggle' && !fromContextMenu) return;
     await ready;
-    if (panel) return close();
+    let contextTarget;
+    if (fromContextMenu && Number.isInteger(message.targetElementId)) {
+      try { contextTarget = browser.menus.getTargetElement(message.targetElementId); }
+      catch { /* A removed target falls back to normal selection. */ }
+    }
+    if (panel) {
+      close();
+      if (!fromContextMenu) return;
+    }
     previousFocus = document.activeElement;
     panel = new SZ.Panel({
       onCancel: close,
@@ -95,7 +105,8 @@
     });
     panel.selecting();
     if (loadError) panel.get('status').textContent = loadError;
-    selection.start();
+    if (SZ.isTextElement(contextTarget)) editElement(contextTarget);
+    else selection.start();
   });
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[`selective-zoom:v1:${location.origin}`]) {
