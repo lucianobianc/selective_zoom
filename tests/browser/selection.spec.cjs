@@ -144,3 +144,21 @@ test('keyboard can select text, edit and cancel without navigating', async ({ pa
   await page.keyboard.press('Escape');
   await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
 });
+test('panel keeps readable colors and typography on dark pages', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await load(page);
+  await page.addStyleTag({ content: `
+    :root { color-scheme: dark; color: #e4e6eb; font: 24px Georgia, serif; }
+    body { background: #242526; color: #e4e6eb; }
+  ` });
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('section')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(panel.locator('h2')).toHaveCSS('color', 'rgb(23, 37, 84)');
+  await expect(panel.locator('#status')).toHaveCSS('color', 'rgb(23, 37, 84)');
+  await expect(panel.locator('#status')).toHaveCSS('font-size', '14px');
+  await expect(panel.locator('#cancel')).toHaveCSS('font-family', 'system-ui, sans-serif');
+  await page.locator('.comment-text').first().click();
+  await expect(panel.locator('label[for=size]')).toHaveCSS('color', 'rgb(23, 37, 84)');
+  await expect(panel.locator('#size')).toHaveCSS('color-scheme', 'light');
+  await page.screenshot({ path: 'test-results/panel-dark-page.png' });
+});

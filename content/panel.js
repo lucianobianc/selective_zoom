@@ -12,12 +12,13 @@
       this.root = this.host.attachShadow({ mode: "open" });
       this.root.innerHTML = `
         <style>
-          :host { font: 14px/1.5 system-ui,sans-serif; color:#172554; }
           * { box-sizing:border-box; }
-          section { width:min(340px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; background:#fff; border:2px solid #1d4ed8; border-radius:12px; padding:16px; box-shadow:0 8px 32px #0004; }
+          /* The host's important reset overrides :host typography. Establish
+             the panel's inherited defaults inside the shadow tree instead. */
+          section { all:initial; display:block; box-sizing:border-box; font:14px/1.5 system-ui,sans-serif; color:#172554; color-scheme:light; direction:ltr; text-align:left; width:min(340px,calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; background:#fff; border:2px solid #1d4ed8; border-radius:12px; padding:16px; box-shadow:0 8px 32px #0004; }
           h2 { font-size:18px; margin:0 0 8px; }
           p { margin:8px 0; }
-          button,input { font:inherit; }
+          button,input { font:inherit; color:inherit; }
           button { cursor:pointer; background:#eff6ff; color:#172554; border:1px solid #2563eb; border-radius:6px; padding:7px 10px; margin:4px 4px 0 0; }
           button:disabled { cursor:default; opacity:.55; }
           :focus-visible { outline:3px solid #ca8a04; outline-offset:2px; }
