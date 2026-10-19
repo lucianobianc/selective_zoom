@@ -26,7 +26,7 @@
     if (/^[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(element.localName) && /comment|post|message/.test(element.localName)) return element.localName;
     return null;
   };
-  const leafSelectors = (element, generated = false) => {
+  const leafSelectors = (element, generated = false, anchored = false) => {
     const options = [];
     for (const attr of ['data-ad-rendering-role', 'data-ad-comet-preview', 'data-testid', 'data-test', 'id']) {
       if (attr === 'id' && !stableToken(element.id)) continue;
@@ -39,7 +39,7 @@
       const all = [...element.classList].filter(safeClass).slice(0, 10);
       // A combination can distinguish text in obfuscated DOMs; a lone hash
       // remains insufficient without a structural/semantic anchor.
-      if (all.length > 1) options.push(element.localName + all.map((value) => `.${value}`).join(''));
+      if (all.length > 1 || (anchored && all.length)) options.push(element.localName + all.map((value) => `.${value}`).join(''));
       if (['auto', 'ltr', 'rtl'].includes(element.getAttribute('dir'))) options.push(ownSelector(element, 'dir'));
     }
     return options;
@@ -88,21 +88,54 @@
       }
       const stable = leafSelectors(element);
       const scoped = leafSelectors(element, true);
+      const contextual = leafSelectors(element, true, true);
+      const directBlocks = element.getAttribute('dir') === 'auto' ? [
+        ...contextual.filter((leaf) => !leaf.includes('[')).map((leaf) => `${leaf}[dir="auto"]`),
+        ownSelector(element, 'dir')
+      ] : [];
       let ancestor = element.parentElement;
       const path = [];
       const weakScopes = [];
-      for (let depth = 0; ancestor && ancestor !== modal && depth < 7 && !['BODY', 'HTML'].includes(ancestor.tagName); depth++, ancestor = ancestor.parentElement) {
+      let textBlock;
+      for (let depth = 0; ancestor && ancestor !== modal && depth < 24 && !['BODY', 'HTML'].includes(ancestor.tagName); depth++, ancestor = ancestor.parentElement) {
+        if (!textBlock && ancestor.getAttribute('dir') === 'auto' && path.length < 5) {
+          textBlock = `${ancestor.localName}[dir="auto"] > ${path.length ? path.join(' > ') + ' > ' : ''}`;
+        }
         const anchor = strongScope(ancestor);
         if (anchor) {
           // Preserve the relative structure, not a global tag or utility class.
-          for (const leaf of [...scoped, element.localName]) {
-            const result = attempt(`${anchor} > ${[...path, leaf].join(' > ')}`);
+          for (const leaf of [...contextual, element.localName]) {
+            const result = path.length < 7 ? attempt(`${anchor} > ${[...path, leaf].join(' > ')}`) : null;
+            if (result) return result;
+          }
+          // Expanded replies may insert many layout wrappers. Keep the article
+          // and text-block anchors without encoding all those transient layers.
+          if (textBlock) for (const leaf of contextual) {
+            const result = attempt(`${anchor} ${textBlock}${leaf}`);
+            if (result) return result;
+          }
+          for (const leaf of directBlocks) {
+            const result = attempt(`${anchor} ${leaf}`);
             if (result) return result;
           }
         }
         const classes = stableClasses(ancestor);
-        if (classes.length) weakScopes.push(`${ancestor.localName}${classes.map((value) => `.${value}`).join('')} > ${path.length ? path.join(' > ') + ' > ' : ''}`);
+        if (classes.length && path.length < 7) weakScopes.push(`${ancestor.localName}${classes.map((value) => `.${value}`).join('')} > ${path.length ? path.join(' > ') + ' > ' : ''}`);
         path.unshift(ancestor.localName);
+      }
+      if (modal) {
+        for (const leaf of directBlocks) {
+          const result = attempt(leaf);
+          if (result) return result;
+        }
+        for (const leaf of contextual) {
+          const result = textBlock ? attempt(textBlock + leaf) : null;
+          if (result) return result;
+          if (ancestor === modal && path.length < 7) {
+            const direct = attempt([...path, leaf].join(' > '));
+            if (direct) return direct;
+          }
+        }
       }
       for (const selector of stable) {
         const global = attempt(selector);

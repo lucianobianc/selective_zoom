@@ -2,7 +2,7 @@
   "use strict";
   const SZ = globalThis.SelectiveZoom ||= {};
   SZ.modalFor = (element) => {
-    const visible = (node) => node.getClientRects().length && node.getAttribute('aria-hidden') !== 'true' &&
+    const visible = (node) => !node.hasAttribute('data-selective-zoom') && node.getClientRects().length && node.getAttribute('aria-hidden') !== 'true' &&
       getComputedStyle(node).visibility === 'visible' &&
       (!node.checkVisibility || node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }));
     const enclosing = element?.closest('dialog[open],[role="dialog"],[role="alertdialog"],[popover]');
@@ -18,7 +18,10 @@
   };
   SZ.mountUI = (host, element) => {
     const parent = SZ.modalFor(element) || document.documentElement;
-    if (host.parentElement !== parent) parent.append(host);
+    if (host.parentElement !== parent) {
+      host.style.setProperty('translate', '0px 0px', 'important');
+      parent.append(host);
+    }
   };
   const excluded = "script,style,noscript,template,input,textarea,select,option,button,iframe,object,embed,[contenteditable]:not([contenteditable=false]),[role=textbox],[data-selective-zoom]";
   SZ.isTextElement = (element) => element instanceof Element &&

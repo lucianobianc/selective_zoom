@@ -320,6 +320,46 @@ class FirefoxExtensionTests(unittest.TestCase):
                 self.assertTrue(self.driver.execute_script("return document.querySelector('[data-selective-zoom=panel]').parentElement === document.documentElement"))
                 self.escape()
 
+    def test_09_deep_replies_generated_class(self):
+        for article_roles, direct in [(True, False), (False, False), (True, True), (False, True)]:
+            with self.subTest(article_roles=article_roles, direct=direct):
+                url = self.urls[0].replace('comments.html', 'deep-replies.html')
+                self.navigate(url + '?direct=1' if direct else url)
+                text_selector = '#replies [dir="auto"]' if direct else '#replies [dir="auto"] span'
+                if not article_roles:
+                    self.driver.execute_script("document.querySelectorAll('#replies [role=article]').forEach(e=>e.removeAttribute('role'))")
+                self.driver.find_element(By.ID, 'open').click()
+                self.toggle()
+                self.edit(text_selector, 28)
+                self.assertIn('2 elemento(s)', self.control('status').text)
+                self.wait_size('header .x1lliihq', 16)
+                self.wait_size('body > .x1lliihq', 16)
+                self.wait_size('input.x1lliihq', 16)
+                self.save()
+                self.driver.find_element(By.ID, 'more').click()
+                sizes = self.driver.execute_script("return [...document.querySelectorAll(arguments[0])].map(e=>getComputedStyle(e).fontSize)", text_selector)
+                self.assertEqual(sizes, ['28px', '28px', '28px'])
+                self.toggle()
+                self.control('list-button').click()
+                self.wait.until(lambda _d: len(self.control('rules').find_elements(By.TAG_NAME, 'li')) == 1)
+                self.control('rules').find_element(By.TAG_NAME, 'button').click()
+                self.wait_size(text_selector, 16)
+                self.escape()
+
+    def test_10_panel_shifted_modal_remains_interactive(self):
+        self.navigate(self.urls[0].replace('comments.html', 'replies-dialog.html'))
+        self.driver.find_element(By.ID, 'show-custom').click()
+        self.driver.execute_script("document.getElementById('custom-replies').style.transform='translateX(800px)'")
+        self.toggle()
+        self.driver.set_window_size(900, 650)
+        try:
+            self.wait.until(lambda d: d.execute_script("const r=document.querySelector('[data-selective-zoom=panel]').getBoundingClientRect();return r.left>=7&&r.top>=7&&r.right<=innerWidth-7&&r.bottom<=innerHeight-7"))
+            self.control('list-button').click()
+            self.wait.until(lambda _d: 'Nenhuma regra' in self.control('status').text)
+            self.escape()
+        finally:
+            self.driver.set_window_size(1280, 900)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Replies com classes geradas — fixture representativa</title>
+<style>body{font:16px sans-serif;padding:24px} [role=dialog]{position:fixed;inset:30px auto auto 30px;width:650px;max-height:80vh;overflow:auto;background:white;padding:20px;border:2px solid #172554} .x1lliihq{font-size:16px}</style>
+<h1>Feed</h1>
+<span class="x1lliihq">Texto do feed com a mesma classe</span>
+<button id="open">Ver replies</button>
+<div role="dialog" aria-modal="true" hidden>
+  <h2>Replies expandidos</h2>
+  <header><a href="#author"><span class="x1lliihq">Autora da janela</span></a></header>
+  <section id="replies"></section>
+  <button id="more">Mais uma resposta</button>
+  <input aria-label="Escrever uma resposta" class="x1lliihq">
+</div>
+<script>
+  const modal = document.querySelector('[role=dialog]');
+  document.querySelector('#open').onclick = () => { modal.hidden = false; };
+  let index = 0;
+  function addReply() {
+    const article = document.createElement('div'); article.setAttribute('role','article');
+    const author = document.createElement('header');
+    author.innerHTML = '<a href="#author"><span class="x1lliihq">Autor da resposta</span></a>';
+    article.append(author);
+    let node = article;
+    // Additional wrappers are common in expanded/virtualized reply trees.
+    for (let depth=0; depth<12; depth++) { const wrapper=document.createElement('div'); node.append(wrapper); node=wrapper; }
+    const body = document.createElement('div'); body.setAttribute('dir','auto');
+    const text = document.createElement('span'); text.className='x1lliihq'; text.textContent=`Resposta expandida ${++index}`;
+    if (new URLSearchParams(location.search).has('direct')) { body.className = 'x1lliihq'; body.textContent = text.textContent; }
+    else body.append(text);
+    node.append(body);
+    const controls = document.createElement('div'); controls.innerHTML='<button>Responder</button><input aria-label="Editor local">';
+    article.append(controls); document.querySelector('#replies').append(article);
+  }
+  addReply(); addReply(); document.querySelector('#more').onclick = addReply;
+</script>
+</html>

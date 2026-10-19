@@ -12,7 +12,7 @@ Extensão para **Firefox desktop 140+** que ajusta o tamanho de grupos de textos
 6. Para rejeitar a proposta, use **Selecionar outro texto**, **Cancelar** ou **Escape**. Cancelar restaura a apresentação anterior.
 7. Abra **Regras deste site** para remover regras e desfazer seus efeitos imediatamente, inclusive em outras abas abertas.
 
-Em janelas de replies sobre o feed, o painel e o destaque ficam dentro da janela ativa; novas regras criadas ali se limitam aos comentários de janelas desse tipo, sem atingir o feed ao fundo.
+Em janelas de replies sobre o feed, o painel permanece ligado à janela ativa, mas é desenhado na camada superior do navegador para evitar cortes nas bordas; o destaque fica dentro da janela; novas regras criadas ali se limitam aos comentários de janelas desse tipo, sem atingir o feed ao fundo.
 
 O botão da extensão também fecha o painel e cancela a prévia. O atalho sugerido é **Ctrl+Shift+Y** (personalizável em Gerenciar atalhos das extensões). No modo de seleção, **↑/↓** percorrem os textos e **Enter** escolhe; **Tab** navega nos controles do painel e **Escape** cancela. O foco volta ao elemento anterior ao fechar.
 

@@ -6,8 +6,8 @@ Atualizado em 19/10/2026, com Node.js 24.19.0, Chromium do ambiente e **Firefox 
 | --- | --- |
 | Instalação reproduzível com `npm ci` | Passou |
 | `npm test` | 10 testes passaram |
-| `npm run test:browser` | 20 testes passaram, interface com Chromium e APIs simuladas |
-| `tests/firefox_smoke.py` | 8 testes passaram, extensão real no Firefox |
+| `npm run test:browser` | 25 testes passaram, interface com Chromium e APIs simuladas |
+| `tests/firefox_smoke.py` | 10 testes passaram, extensão real no Firefox |
 | `npm run lint:extension` | 0 erros, 0 notices e 1 aviso de compatibilidade Android |
 | `npm run build` | ZIP gerado; contém somente scripts, manifesto e licença |
 | YouTube real | Bloqueado pelo proxy do ambiente: CONNECT retornou HTTP 403 |
@@ -32,6 +32,8 @@ O aviso `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` refere-se à declaraç�
 - Prévia, gravação, recarga e remoção em página com CSP restritiva.
 - Replies em diálogo modal nativo e janela com foco restrito: seleção, edição, persistência, novos replies, remoção e retorno ao feed.
 - Destaque alinhado em janela com transformação CSS e regra limitada à janela, preservando o feed ao fundo.
+- Replies com 12 contêineres intermediários e uma única classe gerada: com/sem `role="article"`, tanto texto direto em `div[dir="auto"]` quanto texto em span. Autores, campos e feed não mudam.
+- Painel visível e utilizável após deslocamento da janela modal e redimensionamento da tela. O painel usa popover manual na camada superior, mantendo-se descendente DOM da janela para respeitar o foco restrito.
 - Em DOM representativo: comentários do YouTube separados de títulos e autores que compartilham classes.
 - Em DOM representativo: marcadores de mensagens e caminhos dentro de artigos para textos com classes geradas.
 - Seleção por coordenadas em texto com `pointer-events:none` e `display:contents`, sem atingir o botão adjacente.
@@ -42,7 +44,7 @@ Os testes de lógica e de interface também cobrem validação de seletores cont
 
 A tentativa de acesso a `https://www.youtube.com/` recebeu HTTP 403 do proxy antes de alcançar o site. A validação automatizada no site real continua pendente. O usuário relatou funcionamento no YouTube, mas com agrupamento indevido de outras categorias de texto; a mudança passa a usar o corpo do comentário dentro do contêiner de comentário. Os testes dessa mudança usam DOM representativo, não uma captura autenticada do site.
 
-No Facebook, o usuário relatou que nenhum texto era selecionado e que aparecia a mensagem de impossibilidade de criar uma regra segura. Foram ampliadas a detecção do texto sob o ponteiro e as alternativas de seletor em classes geradas/contêineres semânticos. O usuário confirmou funcionamento nos comentários normais do Facebook e no YouTube após essa alteração. Depois relatou outra falha em replies abertos em uma janela sobre o feed. A correção para janelas modais foi validada no Firefox com fixtures representativas, incluindo foco restrito; os replies na página real do usuário ainda precisam ser conferidos. Não houve sessão autenticada de validação automatizada no Facebook. As fixtures de `social-text.html` são exemplos estruturais explicitamente identificados, não evidência de compatibilidade com todo o DOM atual dos sites.
+No Facebook, o usuário relatou que nenhum texto era selecionado e que aparecia a mensagem de impossibilidade de criar uma regra segura. Foram ampliadas a detecção do texto sob o ponteiro e as alternativas de seletor em classes geradas/contêineres semânticos. O usuário confirmou funcionamento nos comentários normais do Facebook e no YouTube após essa alteração. Depois relatou outra falha em replies abertos em uma janela sobre o feed. A primeira correção para janelas modais passou nas fixtures, mas o usuário informou que não resolveu o caso real: aparecia “Não foi possível criar uma regra segura”, e a imagem mostrava o destaque ativo e o painel cortado à direita. Foram adicionados testes que antes falhavam para árvore profunda, classe gerada isolada e painel em contêiner transformado/deslocado. A nova alteração usa âncoras de janela/artigo/bloco de texto para compactar o seletor e desenha o painel na camada superior. Os novos casos passaram no Firefox; os replies reais ainda precisam ser conferidos pelo usuário. Não houve sessão autenticada de validação automatizada no Facebook. As fixtures de `social-text.html` são exemplos estruturais explicitamente identificados, não evidência de compatibilidade com todo o DOM atual dos sites.
 
 Para concluir a etapa em uma máquina com acesso ao YouTube: carregar a extensão, abrir um vídeo com comentários, selecionar um texto de comentário, conferir os destaques, ajustar/salvar, recarregar e remover a regra. Registrar qualquer falha de seletor ou limitação do DOM antes de propor uma correção específica. Consentimento, autenticação, estrutura dinâmica e disponibilidade dos comentários podem afetar esse teste.
 

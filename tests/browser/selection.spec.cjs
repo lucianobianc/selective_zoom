@@ -304,3 +304,44 @@ test('toolbar can reopen after a replies window closes during preview', async ({
   await expect(page.locator('#custom-replies [data-selective-zoom=panel]')).toHaveCount(0);
   await expect(page.locator('#custom-replies [data-ad-rendering-role=comment_message] span').first()).toHaveCSS('font-size', '16px');
 });
+for (const articleRoles of [true, false]) for (const directText of [true, false]) {
+test(`deep replies with a single generated class can form a scoped rule (article roles: ${articleRoles}, direct text: ${directText})`, async ({ page }) => {
+  await load(page, directText ? 'deep-replies.html?direct=1' : 'deep-replies.html');
+  if (!articleRoles) await page.locator('#replies [role=article]').evaluateAll((nodes) => nodes.forEach((node) => node.removeAttribute('role')));
+  await page.keyboard.press('Escape');
+  await page.locator('#open').click();
+  await page.evaluate(() => window.toggleExtension());
+  const textSelector = directText ? '#replies [dir=auto]' : '#replies [dir=auto] span';
+  const reply = page.locator(textSelector).first();
+  await reply.click();
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#editor')).toBeVisible();
+  await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+  await panel.locator('#size').fill('28');
+  await expect(reply).toHaveCSS('font-size', '28px');
+  await expect(page.locator('[role=dialog] header span').first()).toHaveCSS('font-size', '16px');
+  await expect(page.locator('body > .x1lliihq')).toHaveCSS('font-size', '16px');
+  await expect(page.getByRole('textbox', { name: 'Escrever uma resposta' })).toHaveCSS('font-size', '16px');
+  await panel.locator('#save').click();
+  await page.locator('#more').click();
+  await expect(page.locator(textSelector).last()).toHaveCSS('font-size', '28px');
+});
+}
+test('panel stays on screen inside a shifted modal and after resizing', async ({ page }) => {
+  await load(page, 'replies-dialog.html');
+  await page.keyboard.press('Escape');
+  await page.locator('#show-custom').click();
+  await page.locator('#custom-replies').evaluate((modal) => { modal.style.transform = 'translateX(800px)'; });
+  await page.evaluate(() => window.toggleExtension());
+  const panel = page.locator('[data-selective-zoom=panel]');
+  const onScreen = async () => {
+    const bounds = await panel.boundingBox();
+    const viewport = page.viewportSize();
+    return bounds.x >= 7 && bounds.y >= 7 && bounds.x + bounds.width <= viewport.width - 7 && bounds.y + bounds.height <= viewport.height - 7;
+  };
+  await expect.poll(onScreen).toBe(true);
+  await page.setViewportSize({ width: 900, height: 650 });
+  await expect.poll(onScreen).toBe(true);
+  await panel.locator('#list-button').click();
+  await expect(panel.locator('#status')).toContainText('Nenhuma regra');
+});

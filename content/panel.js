@@ -8,6 +8,9 @@
       this.onRemove = onRemove;
       this.host = document.createElement("div");
       this.host.setAttribute("data-selective-zoom", "panel");
+      // Render above clipping/transform containers while remaining a DOM child
+      // of the site's modal, so its focus trap still accepts our controls.
+      this.host.setAttribute("popover", "manual");
       this.host.style.cssText = "all:initial!important;position:fixed!important;top:16px!important;right:16px!important;z-index:2147483647!important;color-scheme:light!important";
       this.root = this.host.attachShadow({ mode: "open" });
       this.root.innerHTML = `
@@ -57,6 +60,13 @@
       });
       this.get("save").addEventListener("click", () => this.onSave?.());
       SZ.mountUI(this.host);
+      this.fit = () => this.fitInViewport();
+      this.parentObserver = new MutationObserver(this.fit);
+      this.resizeObserver = new ResizeObserver(this.fit);
+      this.resizeObserver.observe(this.host);
+      window.addEventListener('resize', this.fit);
+      window.addEventListener('scroll', this.fit, true);
+      this.fit();
     }
     get(id) { return this.root.getElementById(id); }
     selecting() {
@@ -110,6 +120,40 @@
         this.get("rules").append(row);
       }
     }
-    remove() { this.host.remove(); }
+    fitInViewport() {
+      const parent = this.host.parentElement;
+      if (!parent || !this.host.isConnected) return;
+      if (parent !== this.observedParent) {
+        this.parentObserver.disconnect();
+        this.parentObserver.observe(parent, { attributes: true, attributeFilter: ['hidden', 'open', 'aria-hidden', 'style', 'class'] });
+        this.observedParent = parent;
+      }
+      const shouldShow = parent === document.documentElement || SZ.modalFor(parent) === parent;
+      if (!shouldShow) {
+        if (this.host.matches(':popover-open')) this.host.hidePopover();
+        return;
+      }
+      if (!this.host.matches(':popover-open')) this.host.showPopover();
+      if (!this.host.getClientRects().length) return;
+      const rect = this.host.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const left = (viewport?.offsetLeft || 0) + 8, top = (viewport?.offsetTop || 0) + 8;
+      const right = left + (viewport?.width || innerWidth) - 16;
+      const bottom = top + (viewport?.height || innerHeight) - 16;
+      const dx = rect.right > right ? right - rect.right : rect.left < left ? left - rect.left : 0;
+      const dy = rect.bottom > bottom ? bottom - rect.bottom : rect.top < top ? top - rect.top : 0;
+      if (Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
+      const [x, y] = this.host.style.getPropertyValue('translate').split(' ').map((value) => parseFloat(value) || 0);
+      const scaleX = this.host.offsetWidth ? rect.width / this.host.offsetWidth : 1;
+      const scaleY = this.host.offsetHeight ? rect.height / this.host.offsetHeight : 1;
+      this.host.style.setProperty('translate', `${(x || 0) + dx / scaleX}px ${(y || 0) + dy / scaleY}px`, 'important');
+    }
+    remove() {
+      this.resizeObserver.disconnect();
+      this.parentObserver.disconnect();
+      window.removeEventListener('resize', this.fit);
+      window.removeEventListener('scroll', this.fit, true);
+      this.host.remove();
+    }
   };
 })();
