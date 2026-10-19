@@ -2,9 +2,10 @@
   "use strict";
   const SZ = globalThis.SelectiveZoom ||= {};
   SZ.Panel = class {
-    constructor({ onCancel, onSize, onSave, onConfirm, onReselect }) {
+    constructor({ onCancel, onSize, onSave, onConfirm, onReselect, onList, onRemove }) {
       this.onSize = onSize;
       this.onSave = onSave;
+      this.onRemove = onRemove;
       this.host = document.createElement("div");
       this.host.setAttribute("data-selective-zoom", "panel");
       this.host.style.cssText = "all:initial!important;position:fixed!important;top:16px!important;right:16px!important;z-index:2147483647!important;color-scheme:light!important";
@@ -24,6 +25,8 @@
           input[type=range] { width:100%; }
           [hidden] { display:none!important; }
           .error { color:#b91c1c; }
+          li { margin:12px 0; overflow-wrap:anywhere; }
+          #selector { overflow-wrap:anywhere; }
         </style>
         <section aria-label="Selective Zoom" role="dialog">
           <h2>Selective Zoom</h2>
@@ -37,9 +40,12 @@
             <p id="error" class="error" role="alert"></p>
             <button id="save" disabled>Salvar</button>
           </div>
+          <div id="list" hidden><p id="origin"></p><ul id="rules"></ul><p id="list-error" class="error" role="alert"></p></div>
+          <button id="list-button">Regras deste site</button>
           <button id="reselect" hidden>Selecionar outro texto</button>
           <button id="cancel">Cancelar</button>
         </section>`;
+      this.get("list-button").addEventListener("click", () => onList?.());
       this.get("confirm").addEventListener("change", () => onConfirm?.(this.get("confirm").checked));
       this.get("reselect").addEventListener("click", () => onReselect?.());
       this.get("cancel").addEventListener("click", onCancel);
@@ -57,6 +63,9 @@
     selecting() {
       this.get("status").textContent = "Selecione um texto na página. Escape cancela.";
       this.get("editor").hidden = true;
+      this.get("list").hidden = true;
+      this.get("reselect").hidden = true;
+      this.get("error").textContent = "";
     }
     edit(size, proposal) {
       this.get("editor").hidden = false;
@@ -74,6 +83,30 @@
       this.get("editor").hidden = true;
       this.get("reselect").hidden = false;
       this.get("reselect").focus();
+    }
+    list(record) {
+      this.get("editor").hidden = true;
+      this.get("list").hidden = false;
+      this.get("reselect").hidden = false;
+      this.get("status").textContent = record.rules.length ? `${record.rules.length} regra(s) deste site.` : "Nenhuma regra salva neste site.";
+      this.get("origin").textContent = record.origin;
+      this.get("list-error").textContent = "";
+      this.get("rules").replaceChildren();
+      for (const rule of record.rules) {
+        const row = document.createElement("li");
+        const label = document.createElement("span");
+        label.textContent = `${rule.selector} — ${rule.size} px `;
+        const remove = document.createElement("button");
+        remove.textContent = "Remover";
+        remove.setAttribute("aria-label", `Remover regra ${rule.selector}`);
+        remove.addEventListener("click", async () => {
+          remove.disabled = true;
+          try { await this.onRemove(rule.id); }
+          finally { remove.disabled = false; }
+        });
+        row.append(label, remove);
+        this.get("rules").append(row);
+      }
     }
     remove() { this.host.remove(); }
   };

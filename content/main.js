@@ -7,6 +7,7 @@
   const request = async (type, fields = {}) => {
     const result = await browser.runtime.sendMessage({ type: `selective-zoom:${type}`, ...fields });
     if (!result?.ok) throw new Error(result?.error || 'Não foi possível acessar as regras locais.');
+    loadError = null;
     styles.apply(result.record);
     return result.record;
   };
@@ -47,6 +48,21 @@
     if (panel) return close();
     panel = new SZ.Panel({
       onCancel: close,
+      onList: async () => {
+        selection.stop();
+        styles.clearPreview();
+        proposal = null;
+        const owner = panel;
+        try { const record = await request('load'); if (panel === owner) panel.list(record); }
+        catch (error) { if (panel === owner) panel.get('status').textContent = error.message; }
+      },
+      onRemove: async (id) => {
+        const owner = panel;
+        try {
+          const record = await request('remove', { id });
+          if (panel === owner) { panel.list(record); panel.get('reselect').focus(); }
+        } catch (error) { if (panel === owner) panel.get('list-error').textContent = error.message; }
+      },
       onSize: (value) => { size = value; if (proposal) styles.showPreview(proposal.selector, size); refreshSave(); },
       onConfirm: (value) => { confirmed = value; refreshSave(); },
       onSave: async () => {
@@ -80,7 +96,7 @@
   });
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[`selective-zoom:v1:${location.origin}`]) {
-      request('load').catch((error) => { loadError = error.message; if (panel) panel.get('error').textContent = loadError; });
+      request('load').then((record) => { if (panel && !panel.get('list').hidden) panel.list(record); }).catch((error) => { loadError = error.message; if (panel) panel.get('error').textContent = loadError; });
     }
   });
 })();

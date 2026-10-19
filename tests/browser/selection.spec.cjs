@@ -113,3 +113,23 @@ test('DOM changes between review and save require renewed confirmation', async (
   await expect(page.locator('[data-selective-zoom=panel] #confirm')).not.toBeChecked();
   await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
 });
+test('two independent rules coexist and deleting one restores only its text', async ({ page }) => {
+  await load(page);
+  for (const [selector, size] of [['.comment-text', '25'], ['.caption', '20']]) {
+    if (!(await page.locator('[data-selective-zoom=panel]').count())) await page.evaluate(() => window.toggleExtension());
+    await page.locator(selector).first().click();
+    await page.locator('[data-selective-zoom=panel] #size').fill(size);
+    await page.locator('[data-selective-zoom=panel] #confirm').check();
+    await page.locator('[data-selective-zoom=panel] #save').click();
+  }
+  await page.evaluate(() => window.toggleExtension());
+  await page.locator('[data-selective-zoom=panel] #list-button').click();
+  await expect(page.locator('[data-selective-zoom=panel] #rules li')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Remover regra p.comment-text', exact: true }).click();
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
+  await expect(page.locator('.caption')).toHaveCSS('font-size', '20px');
+  await expect(page.locator('[data-selective-zoom=panel] #rules li')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Remover regra p.caption', exact: true }).click();
+  await expect(page.locator('.caption')).toHaveCSS('font-size', '12px');
+  await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('Nenhuma regra');
+});
