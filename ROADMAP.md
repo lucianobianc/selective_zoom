@@ -46,14 +46,7 @@
 
 **Verificar:** duas regras independentes podem coexistir; excluir uma não altera a outra.
 
-**Não implementar:** editor completo de regras nem perfis.
-
 ## Etapa 7 — Validação em site real e acabamento
 **Implementar:** testar no YouTube, corrigir defeitos comprovados, documentar limitações, revisar permissões e acessibilidade básica.
 
 **Verificar:** selecionar e ajustar texto de comentários quando o DOM permitir; registrar falhas de seletor sem aplicar regras indevidas.
-
-**Não implementar:** suporte especial ao Facebook, controles adicionais de tipografia ou funcionalidades não previstas no MVP.
-
-## Instrução inicial para o Codex
-Leia `SPEC.md` e `ROADMAP.md`. Execute **somente a Etapa 1**. Crie a menor extensão Firefox funcional que atenda aos critérios dessa etapa. Documente como carregá-la temporariamente no Firefox e como testar a ativação/desativação. Não antecipe seleção de elementos, painel de edição, persistência ou recursos das etapas seguintes. Ao terminar, informe os arquivos criados, o procedimento de teste e quaisquer limitações.
