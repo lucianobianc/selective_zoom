@@ -7,11 +7,23 @@
     element.getRootNode() === document && !!element.textContent.trim() &&
     !element.querySelector("input,textarea,select,button,[contenteditable]:not([contenteditable=false]),[role=textbox]");
 
+  SZ.textTarget = (element, x, y) => {
+    if (!(element instanceof Element) || element.closest(excluded) || element.getRootNode() !== document) return null;
+    // Event targets can be wrappers even when a nested text span is under the
+    // pointer (for example with pointer-events:none or display:contents).
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      const caret = document.caretPositionFromPoint?.(x, y);
+      const node = caret?.offsetNode || document.caretRangeFromPoint?.(x, y)?.startContainer;
+      if (node?.nodeType === Node.TEXT_NODE && element.contains(node) && SZ.isTextElement(node.parentElement)) return node.parentElement;
+    }
+    return SZ.isTextElement(element) ? element : null;
+  };
+
   SZ.Selection = class {
     constructor({ onSelect, onCancel }) {
       this.onSelect = onSelect;
       this.onCancel = onCancel;
-      this.move = (event) => this.highlight(event.target);
+      this.move = (event) => this.highlight(SZ.textTarget(event.target, event.clientX, event.clientY));
       this.suppress = (event) => {
         if (event.button !== 0) return;
         if (event.composedPath().some((node) => node instanceof Element && node.hasAttribute("data-selective-zoom"))) return;
@@ -19,9 +31,9 @@
         event.stopImmediatePropagation();
       };
       this.click = (event) => {
+        const target = SZ.textTarget(event.target, event.clientX, event.clientY);
         this.suppress(event);
-        if (!SZ.isTextElement(event.target)) return;
-        const target = event.target;
+        if (!target) return;
         this.stop();
         this.onSelect(target);
       };
@@ -86,7 +98,12 @@
       this.target = SZ.isTextElement(element) ? element : null;
       this.box.style.display = "none";
       if (!SZ.isTextElement(element)) return;
-      const rect = element.getBoundingClientRect();
+      let rect = element.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        rect = range.getBoundingClientRect();
+      }
       Object.assign(this.box.style, { display: "block", left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
     }
     stop() {

@@ -1,8 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const path = require('node:path');
 const manifest = require('../../manifest.json');
-async function load(page) {
-  await page.goto('http://127.0.0.1:8000/tests/fixtures/comments.html');
+async function load(page, fixture = 'comments.html') {
+  await page.goto(`http://127.0.0.1:8000/tests/fixtures/${fixture}`);
   await page.evaluate(() => {
     const key = `selective-zoom:v1:${location.origin}`;
     window.browser = {
@@ -190,4 +190,69 @@ test('context action on sensitive or missing targets starts safe selection', asy
     await expect(page.locator('[data-selective-zoom=panel] #editor')).toBeHidden();
     await expect(page.locator('[data-selective-zoom=highlight]')).toHaveCount(1);
   }
+});
+test('YouTube-shaped comments do not share a rule with titles or authors', async ({ page }) => {
+  await load(page, 'social-text.html');
+  await page.locator('ytd-comment-view-model [id=content-text] span').first().click();
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#selector')).toHaveText('ytd-comment-view-model yt-attributed-string[id="content-text"]');
+  await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+  await panel.locator('#size').fill('29');
+  for (const element of await page.locator('ytd-comment-view-model [id=content-text] span').all()) await expect(element).toHaveCSS('font-size', '29px');
+  await expect(page.locator('#video-title')).toHaveCSS('font-size', '16px');
+  await expect(page.locator('ytd-comment-view-model a')).toHaveCSS('font-size', '16px');
+  await panel.locator('#save').click();
+  await load(page, 'social-text.html');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('ytd-comment-view-model [id=content-text] span').first()).toHaveCSS('font-size', '29px');
+  await expect(page.locator('#video-title')).toHaveCSS('font-size', '16px');
+});
+test('Facebook-shaped markers separate comments from posts and style nested text', async ({ page }) => {
+  await load(page, 'social-text.html');
+  await page.locator('[data-ad-rendering-role=comment_message] span').first().click();
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#selector')).toHaveText('div[data-ad-rendering-role="comment_message"]');
+  await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+  await panel.locator('#size').fill('28');
+  await expect(page.locator('[data-ad-rendering-role=comment_message] span').first()).toHaveCSS('font-size', '28px');
+  await expect(page.locator('[data-ad-rendering-role=story_message] span')).toHaveCSS('font-size', '16px');
+  await expect(page.locator('div[role=article] a')).toHaveCSS('font-size', '16px');
+  await panel.locator('#cancel').click();
+  await expect(page.locator('[data-ad-rendering-role=comment_message] span').first()).toHaveCSS('font-size', '16px');
+});
+test('article structure can scope generated classes when body markers are absent', async ({ page }) => {
+  await load(page, 'social-text.html');
+  await page.locator('.unmarked-comments div[dir=auto]').first().click();
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+  await expect(panel.locator('#selector')).toContainText('div[role="article"] > div > div');
+  await panel.locator('#size').fill('27');
+  await expect(page.locator('.unmarked-comments div[dir=auto] span').first()).toHaveCSS('font-size', '27px');
+  await expect(page.locator('.unmarked-comments header span').first()).toHaveCSS('font-size', '16px');
+  await expect(page.locator('p.x193iq5w')).toHaveCSS('font-size', '16px');
+});
+test('a shared class is scoped to its local discussion structure', async ({ page }) => {
+  await load(page, 'social-text.html');
+  await page.locator('.discussion .shared-text').first().click();
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#selector')).toHaveText('section.discussion > p.shared-text');
+  await panel.locator('#size').fill('26');
+  await expect(page.locator('.discussion .shared-text').nth(1)).toHaveCSS('font-size', '26px');
+  await expect(page.locator('aside .shared-text')).toHaveCSS('font-size', '16px');
+});
+test('pointer coordinates find text inside a wrapper with controls', async ({ page }) => {
+  await load(page, 'social-text.html');
+  const point = await page.locator('.layered-text').first().evaluate((element) => {
+    const range = document.createRange(); range.selectNodeContents(element);
+    const rect = range.getBoundingClientRect();
+    return { x: rect.left + 20, y: rect.top + rect.height / 2 };
+  });
+  await page.mouse.move(point.x, point.y);
+  await expect(page.locator('[data-selective-zoom=highlight]').locator('div')).toHaveCSS('display', 'block');
+  await page.mouse.click(point.x, point.y);
+  const panel = page.locator('[data-selective-zoom=panel]');
+  await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+  await panel.locator('#size').fill('30');
+  await expect(page.locator('.layered-text').first()).toHaveCSS('font-size', '30px');
+  await expect(page.locator('.layer-hit button').first()).toHaveCSS('font-size', '13.3333px');
 });

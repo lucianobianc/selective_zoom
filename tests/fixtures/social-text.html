@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Fixtures estruturais de comentários — Selective Zoom</title>
+<style>
+  body { font:16px sans-serif; margin:32px; max-width:700px; }
+  ytd-comment-view-model, ytd-comment-renderer, yt-attributed-string { display:block; margin:16px 0; }
+  .yt-core-attributed-string, .x1lliihq, .x193iq5w { font-size:16px; }
+</style>
+<h1>DOM representativo; não é uma captura dos sites</h1>
+<!-- YouTube: shared typography across unrelated types of content. -->
+<yt-attributed-string id="video-title" class="yt-core-attributed-string">Título com a mesma classe dos comentários</yt-attributed-string>
+<ytd-comment-view-model>
+  <a class="yt-core-attributed-string" href="#author">Nome do autor</a>
+  <yt-attributed-string id="content-text" class="style-scope yt-core-attributed-string"><span class="yt-core-attributed-string">Primeiro comentário</span></yt-attributed-string>
+</ytd-comment-view-model>
+<ytd-comment-view-model>
+  <yt-attributed-string id="content-text" class="style-scope yt-core-attributed-string"><span class="yt-core-attributed-string">Segundo comentário</span></yt-attributed-string>
+</ytd-comment-view-model>
+<ytd-comment-renderer>
+  <yt-formatted-string id="content-text" class="style-scope"><span>Comentário de estrutura anterior</span></yt-formatted-string>
+</ytd-comment-renderer>
+<!-- Facebook variants with semantic markers and generated presentation classes. -->
+<div data-ad-rendering-role="story_message" class="x193iq5w x1lliihq"><span class="x1lliihq">Texto da publicação</span></div>
+<div role="article">
+  <a class="x193iq5w x1lliihq" href="#author">Autora do comentário</a>
+  <div data-ad-rendering-role="comment_message" class="x193iq5w x1lliihq"><span class="x1lliihq">Comentário com marcador semântico</span></div>
+</div>
+<div role="article">
+  <div data-ad-rendering-role="comment_message" class="x193iq5w x1lliihq"><span class="x1lliihq">Outro comentário com marcador semântico</span></div>
+</div>
+<!-- A variant without named body markers; use article scope and relative structure. -->
+<section class="unmarked-comments">
+  <div role="article"><header><span class="x193iq5w x1lliihq">Autor separado</span></header><div><div class="x193iq5w x1lliihq" dir="auto"><span>Corpo sem marcador semântico</span></div></div></div>
+  <div role="article"><header><span class="x193iq5w x1lliihq">Outro autor</span></header><div><div class="x193iq5w x1lliihq" dir="auto"><span>Outro corpo sem marcador semântico</span></div></div></div>
+</section>
+<p class="x193iq5w x1lliihq">Texto externo com as mesmas classes geradas</p>
+<!-- Generic shared classes also need structural scope. -->
+<section class="discussion"><p class="shared-text">Texto de discussão</p><p class="shared-text">Outra discussão</p></section>
+<aside><p class="shared-text">Texto alheio à discussão</p></aside>
+<!-- The wrapper receives pointer events but contains both text and controls. -->
+<section class="layered-comments">
+  <div role="article"><div class="layer-hit"><span class="layered-text" style="pointer-events:none;display:contents">Texto sob um contêiner com botão</span><button>Responder</button></div></div>
+  <div role="article"><div class="layer-hit"><span class="layered-text" style="pointer-events:none;display:contents">Outro texto sob um contêiner com botão</span><button>Responder</button></div></div>
+</section>
+</html>

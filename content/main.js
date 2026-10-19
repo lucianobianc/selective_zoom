@@ -4,6 +4,10 @@
   const SZ = globalThis.SelectiveZoom;
   const styles = new SZ.Styles();
   let panel, proposal, size, busy = false, loadError, previousFocus;
+  let contextPoint;
+  window.addEventListener('contextmenu', (event) => {
+    contextPoint = { element: event.target, x: event.clientX, y: event.clientY };
+  }, true);
   const request = async (type, fields = {}) => {
     const result = await browser.runtime.sendMessage({ type: `selective-zoom:${type}`, ...fields });
     if (!result?.ok) throw new Error(result?.error || 'Não foi possível acessar as regras locais.');
@@ -49,8 +53,13 @@
     await ready;
     let contextTarget;
     if (fromContextMenu && Number.isInteger(message.targetElementId)) {
-      try { contextTarget = browser.menus.getTargetElement(message.targetElementId); }
+      try {
+        const target = browser.menus.getTargetElement(message.targetElementId);
+        const point = contextPoint?.element === target ? contextPoint : {};
+        contextTarget = SZ.textTarget(target, point.x, point.y);
+      }
       catch { /* A removed target falls back to normal selection. */ }
+      contextPoint = null;
     }
     if (panel) {
       close();

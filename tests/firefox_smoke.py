@@ -13,6 +13,7 @@ import unittest
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.actions.action_builder import ActionBuilder
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
@@ -235,6 +236,57 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.wait_size('.comment-text', 27)
         self.escape()
         self.wait_size('.comment-text', 16)
+
+    def test_06_scoped_social_text_fixtures(self):
+        # Representative structures, not authenticated live-site sessions.
+        self.navigate(self.urls[0].replace('comments.html', 'social-text.html'))
+        self.toggle()
+        self.edit('ytd-comment-view-model [id="content-text"] span', 29)
+        self.assertIn('2 elemento(s)', self.control('status').text)
+        self.wait_size('#video-title', 16)
+        self.wait_size('ytd-comment-view-model a', 16)
+        self.save()
+        self.driver.refresh()
+        self.wait_size('ytd-comment-view-model [id="content-text"] span', 29)
+        self.wait_size('#video-title', 16)
+        self.toggle()
+        self.control('list-button').click()
+        self.wait.until(lambda _d: len(self.control('rules').find_elements(By.TAG_NAME, 'li')) == 1)
+        self.control('rules').find_element(By.TAG_NAME, 'button').click()
+        self.wait_size('ytd-comment-view-model [id="content-text"] span', 16)
+        self.escape()
+        self.toggle()
+        self.edit('[data-ad-rendering-role="comment_message"] span', 28)
+        self.assertIn('2 elemento(s)', self.control('status').text)
+        self.wait_size('[data-ad-rendering-role="story_message"] span', 16)
+        self.wait_size('div[role="article"] a', 16)
+        self.escape()
+        self.toggle()
+        self.edit('.unmarked-comments div[dir="auto"] span', 27)
+        self.assertIn('2 elemento(s)', self.control('status').text)
+        self.wait_size('.unmarked-comments header span', 16)
+        self.wait_size('p.x193iq5w', 16)
+        self.escape()
+
+    def test_07_layered_pointer_target(self):
+        self.navigate(self.urls[0].replace('comments.html', 'social-text.html'))
+        original_button_size = self.size('.layer-hit button')
+        self.toggle()
+        point = self.driver.execute_script("""
+            const range=document.createRange();range.selectNodeContents(document.querySelector('.layered-text'));
+            const rect=range.getBoundingClientRect();return {x:rect.left+20,y:rect.top+rect.height/2};
+        """)
+        actions = ActionBuilder(self.driver)
+        actions.pointer_action.move_to_location(int(point['x']), int(point['y']))
+        actions.pointer_action.click()
+        actions.perform()
+        self.wait.until(lambda _d: self.control('editor').is_displayed())
+        self.assertIn('2 elemento(s)', self.control('status').text)
+        self.control('size').clear()
+        self.control('size').send_keys('30')
+        self.wait_size('.layered-text', 30)
+        self.assertEqual(self.size('.layer-hit button'), original_button_size)
+        self.escape()
 
 
 if __name__ == "__main__":

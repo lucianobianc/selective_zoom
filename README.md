@@ -14,6 +14,8 @@ Extensão para **Firefox desktop 140+** que ajusta o tamanho de grupos de textos
 
 O botão da extensão também fecha o painel e cancela a prévia. O atalho sugerido é **Ctrl+Shift+Y** (personalizável em Gerenciar atalhos das extensões). No modo de seleção, **↑/↓** percorrem os textos e **Enter** escolhe; **Tab** navega nos controles do painel e **Escape** cancela. O foco volta ao elemento anterior ao fechar.
 
+Se você já salvou uma regra ampla demais no YouTube, remova-a em **Regras deste site** antes de selecionar o comentário novamente. As regras antigas são preservadas; a atualização melhora a criação das próximas regras.
+
 As regras se aplicam a toda a **origem** (protocolo, host e porta), em todas as suas páginas. Salvar o mesmo seletor atualiza sua regra; remover uma regra mantém as demais. Conteúdo novo que corresponda a um seletor recebe o estilo pela cascata CSS, sem varrer continuamente a página.
 
 A instalação temporária dura até fechar o Firefox. O ZIP gerado em desenvolvimento não é assinado; instalação permanente e publicação na loja exigem assinatura pela Mozilla.
@@ -37,7 +39,7 @@ Para testar visualmente a fixture, execute na raiz:
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-Abra `/tests/fixtures/comments.html` na porta 8000. A página tem comentários, uma legenda independente, link, campo de entrada e botão para inserir novos comentários.
+Abra `/tests/fixtures/comments.html` na porta 8000. `/tests/fixtures/social-text.html` oferece estruturas representativas de comentários, classes compartilhadas e camadas de texto; não é uma captura dos sites. A página tem comentários, uma legenda independente, link, campo de entrada e botão para inserir novos comentários.
 
 ### Testes automatizados
 
@@ -72,11 +74,11 @@ npm run build
 
 - Páginas internas do Firefox, páginas restritas pela Mozilla e PDFs do visualizador embutido não aceitam os scripts. Nesses casos, o título do botão informa a indisponibilidade. Recarregue abas antigas após instalar a extensão.
 - Iframes e Shadow DOM de terceiros ficam fora do MVP. Campos, botões e conteúdo editável não podem ser selecionados.
-- Os seletores são heurísticos e conservadores: classes numéricas ou com aparência de hash são descartadas; não há fallback amplo por nome de tag. Confira os destaques antes de salvar, pois o DOM não garante equivalência semântica.
+- Os seletores priorizam IDs, marcadores de texto e a estrutura de contêineres de comentários/artigos. Classes geradas podem ser usadas em combinações ou dentro de um escopo estrutural; uma classe instável isolada continua insuficiente. Não há fallback amplo por nome de tag. Confira os destaques antes de salvar, pois o DOM não garante equivalência semântica.
 - A proposta aceita até 500 correspondências e o modo de seleção por teclado percorre até 500 textos. Há no máximo 100 regras por origem.
 - Se o conjunto de elementos mudar antes de salvar, o primeiro clique atualiza a prévia; confira os novos destaques e clique em Salvar novamente. Depois de salva, uma regra acompanha o seletor: mudanças futuras no site podem invalidá-la ou mudar sua abrangência.
 - Regras sobrepostas obedecem à especificidade e à ordem da cascata CSS. Estilos inline com `!important` podem impedir o ajuste; mudanças de fonte também podem alterar quebras de linha e alturas.
 - O painel usa Shadow DOM para isolar seus estilos. O site ainda pode remover elementos inseridos no documento ou colocá-los sob uma camada de tela cheia.
-- Não há ajustes específicos para YouTube ou Facebook, nem sincronização, exportação ou suporte móvel.
+- Há reconhecimento de estruturas de comentários do YouTube e de marcadores de texto/contêineres usados em variantes do Facebook. Isso não garante funcionamento em todas as versões desses sites; os testes locais usam DOM representativo. Não há sincronização, exportação ou suporte móvel.
 
 Veja [SPEC.md](SPEC.md) e [ROADMAP.md](ROADMAP.md) para o escopo original.
