@@ -11,6 +11,8 @@
   },
   "background": {
     "scripts": [
+      "content/selectors.js",
+      "shared/storage.js",
       "background.js"
     ]
   },
@@ -26,11 +28,15 @@
       "js": [
         "content/selection.js",
         "content/selectors.js",
+        "shared/storage.js",
         "content/styles.js",
         "content/panel.js",
         "content/main.js"
       ],
       "run_at": "document_idle"
     }
+  ],
+  "permissions": [
+    "storage"
   ]
 }

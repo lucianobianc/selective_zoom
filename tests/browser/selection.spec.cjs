@@ -4,7 +4,28 @@ const manifest = require('../../manifest.json');
 async function load(page) {
   await page.goto('http://127.0.0.1:8000/tests/fixtures/comments.html');
   await page.evaluate(() => {
-    window.browser = { runtime: { onMessage: { addListener(fn) { window.toggleExtension = () => fn({ type: 'selective-zoom:toggle' }); } } } };
+    const key = `selective-zoom:v1:${location.origin}`;
+    window.browser = {
+      storage: { onChanged: { addListener() {} } },
+      runtime: {
+        onMessage: { addListener(fn) { window.toggleExtension = () => fn({ type: 'selective-zoom:toggle' }); } },
+        async sendMessage(message) {
+          if (window.storageError) return { ok: false, error: 'Falha de armazenamento de teste' };
+          let record = JSON.parse(localStorage.getItem(key) || 'null') || { version: 1, origin: location.origin, rules: [] };
+          if (message.type.endsWith(':save')) {
+            record = await new window.SelectiveZoom.RuleStore({
+              get: async () => ({ [key]: record }),
+              set: async (value) => { record = value[key]; localStorage.setItem(key, JSON.stringify(record)); }
+            }).save(location.origin, message.selector, message.size);
+          }
+          if (message.type.endsWith(':remove')) {
+            record.rules = record.rules.filter((rule) => rule.id !== message.id);
+            localStorage.setItem(key, JSON.stringify(record));
+          }
+          return { ok: true, record };
+        }
+      }
+    };
   });
   for (const script of manifest.content_scripts[0].js) await page.addScriptTag({ path: path.resolve(__dirname, '../..', script) });
   await page.evaluate(() => window.toggleExtension());
@@ -53,4 +74,42 @@ test('unstable classes have no unsafe tag-only fallback', async ({ page }) => {
   await page.locator('[data-selective-zoom=panel] #reselect').click();
   await page.locator('.comment-text').first().click();
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('3 elemento(s)');
+});
+test('saving requires confirmation, survives reload and styles new matching content', async ({ page }) => {
+  await load(page);
+  await page.locator('.comment-text').first().click();
+  await page.locator('[data-selective-zoom=panel] #size').fill('26');
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
+  await page.locator('[data-selective-zoom=panel] #confirm').check();
+  await page.locator('[data-selective-zoom=panel] #save').click();
+  await expect(page.locator('[data-selective-zoom=panel]')).toHaveCount(0);
+  await load(page);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '26px');
+  await page.locator('#add-comment').click();
+  await expect(page.locator('.comment-text').last()).toHaveCSS('font-size', '26px');
+  await expect(page.locator('h1')).toHaveCSS('font-size', '32px');
+});
+test('save failure stays visible and invalid sizes cannot be saved', async ({ page }) => {
+  await load(page);
+  await page.locator('.comment-text').first().click();
+  await page.locator('[data-selective-zoom=panel] #confirm').check();
+  await page.locator('[data-selective-zoom=panel] #size').fill('129');
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
+  await page.locator('[data-selective-zoom=panel] #size').fill('22');
+  await page.evaluate(() => { window.storageError = true; });
+  await page.locator('[data-selective-zoom=panel] #save').click();
+  await expect(page.locator('[data-selective-zoom=panel] #error')).toContainText('Falha de armazenamento');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
+});
+test('DOM changes between review and save require renewed confirmation', async ({ page }) => {
+  await load(page);
+  await page.locator('.comment-text').first().click();
+  await page.locator('[data-selective-zoom=panel] #confirm').check();
+  await page.evaluate(() => document.querySelector('#add-comment').click());
+  await page.locator('[data-selective-zoom=panel] #save').click();
+  await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('A página mudou: 4');
+  await expect(page.locator('[data-selective-zoom=panel] #confirm')).not.toBeChecked();
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
 });
