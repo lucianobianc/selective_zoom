@@ -3,23 +3,21 @@
   "use strict";
   const SZ = globalThis.SelectiveZoom;
   const styles = new SZ.Styles();
-  let panel, target, attribute;
+  let panel, proposal;
   const close = () => {
     selection.stop();
     styles.clearPreview();
-    if (target && attribute) target.removeAttribute(attribute);
-    target = attribute = null;
+    proposal = null;
     panel?.remove();
     panel = null;
   };
   const selection = new SZ.Selection({
     onSelect(element) {
-      target = element;
-      attribute = `data-sz-${crypto.randomUUID()}`;
-      target.setAttribute(attribute, "");
+      proposal = SZ.Selectors.propose(element);
+      if (!proposal) return panel.unavailable();
       const size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
-      panel.edit(size);
-      styles.showPreview(`[${attribute}]`, size);
+      panel.edit(size, proposal);
+      styles.showPreview(proposal.selector, size);
     },
     onCancel: close
   });
@@ -33,7 +31,11 @@
   browser.runtime.onMessage.addListener((message) => {
     if (message.type !== "selective-zoom:toggle") return;
     if (panel) return close();
-    panel = new SZ.Panel({ onCancel: close, onSize: (size) => styles.showPreview(`[${attribute}]`, size) });
+    panel = new SZ.Panel({
+      onCancel: close,
+      onSize: (size) => proposal && styles.showPreview(proposal.selector, size),
+      onReselect: () => { styles.clearPreview(); proposal = null; panel.selecting(); selection.start(); }
+    });
     panel.selecting();
     selection.start();
   });

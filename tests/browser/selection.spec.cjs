@@ -26,14 +26,31 @@ test('sensitive controls cannot be selected', async ({ page }) => {
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('Selecione');
   await expect(page.locator('[data-selective-zoom=highlight]')).toHaveCount(1);
 });
-test('preview changes only selected text and cancel restores original styles', async ({ page }) => {
+test('preview changes matching text only and cancel restores original styles', async ({ page }) => {
   await load(page);
   await page.locator('.comment-text').first().click();
   await page.locator('[data-selective-zoom=panel] #size').fill('30');
   await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '30px');
-  await expect(page.locator('.comment-text').nth(1)).toHaveCSS('font-size', '16px');
+  await expect(page.locator('.comment-text').nth(1)).toHaveCSS('font-size', '30px');
+  await expect(page.locator('h1')).toHaveCSS('font-size', '32px');
+  await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('3 elemento(s)');
   await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
   await page.locator('[data-selective-zoom=panel] #cancel').click();
   await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
   expect(await page.locator('.comment-text').first().getAttribute('style')).toBeNull();
+});
+test('unstable classes have no unsafe tag-only fallback', async ({ page }) => {
+  await load(page);
+  await page.evaluate(() => {
+    const p = document.createElement('p');
+    p.className = 'css-a1b2c3';
+    p.textContent = 'Texto sem seletor confiável';
+    document.body.append(p);
+  });
+  await page.locator('.css-a1b2c3').click();
+  await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('Não foi possível');
+  await expect(page.locator('[data-selective-zoom=panel] #editor')).toBeHidden();
+  await page.locator('[data-selective-zoom=panel] #reselect').click();
+  await page.locator('.comment-text').first().click();
+  await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('3 elemento(s)');
 });

@@ -2,7 +2,7 @@
   "use strict";
   const SZ = globalThis.SelectiveZoom ||= {};
   SZ.Panel = class {
-    constructor({ onCancel, onSize, onSave }) {
+    constructor({ onCancel, onSize, onSave, onConfirm, onReselect }) {
       this.onSize = onSize;
       this.onSave = onSave;
       this.host = document.createElement("div");
@@ -29,14 +29,19 @@
           <h2>Selective Zoom</h2>
           <p id="status" role="status" aria-live="polite"></p>
           <div id="editor" hidden>
+            <p id="selector"></p><p id="samples"></p>
+            <label><input id="confirm" type="checkbox"> Os elementos destacados são os que quero alterar</label><br>
             <label for="size">Tamanho da fonte (px)</label>
             <input id="size" type="number" min="6" max="128" step="1">
             <input id="range" aria-label="Ajustar tamanho da fonte" type="range" min="6" max="128" step="1">
             <p id="error" class="error" role="alert"></p>
             <button id="save" disabled>Salvar</button>
           </div>
+          <button id="reselect" hidden>Selecionar outro texto</button>
           <button id="cancel">Cancelar</button>
         </section>`;
+      this.get("confirm").addEventListener("change", () => onConfirm?.(this.get("confirm").checked));
+      this.get("reselect").addEventListener("click", () => onReselect?.());
       this.get("cancel").addEventListener("click", onCancel);
       for (const name of ["size", "range"]) this.get(name).addEventListener("input", () => {
         const size = Number(this.get(name).value);
@@ -53,12 +58,22 @@
       this.get("status").textContent = "Selecione um texto na página. Escape cancela.";
       this.get("editor").hidden = true;
     }
-    edit(size) {
+    edit(size, proposal) {
       this.get("editor").hidden = false;
-      this.get("status").textContent = "Selecionado: prévia temporária em 1 elemento.";
+      this.get("confirm").checked = false;
+      this.get("reselect").hidden = false;
+      this.get("status").textContent = `Selecionado: ${proposal.elements.length} elemento(s) destacado(s). Confira antes de confirmar.`;
+      this.get("selector").textContent = proposal.selector;
+      this.get("samples").textContent = proposal.elements.slice(0, 3).map((element) => element.textContent.trim().slice(0, 60)).join(" • ");
       this.get("size").value = size;
       this.get("range").value = size;
       this.get("size").focus();
+    }
+    unavailable() {
+      this.get("status").textContent = "Não foi possível criar uma regra segura para esse texto. Nenhuma alteração foi salva.";
+      this.get("editor").hidden = true;
+      this.get("reselect").hidden = false;
+      this.get("reselect").focus();
     }
     remove() { this.host.remove(); }
   };

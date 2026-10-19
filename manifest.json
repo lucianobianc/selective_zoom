@@ -25,6 +25,7 @@
       ],
       "js": [
         "content/selection.js",
+        "content/selectors.js",
         "content/styles.js",
         "content/panel.js",
         "content/main.js"
