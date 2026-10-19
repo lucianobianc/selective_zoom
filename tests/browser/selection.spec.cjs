@@ -256,3 +256,51 @@ test('pointer coordinates find text inside a wrapper with controls', async ({ pa
   await expect(page.locator('.layered-text').first()).toHaveCSS('font-size', '30px');
   await expect(page.locator('.layer-hit button').first()).toHaveCSS('font-size', '13.3333px');
 });
+for (const kind of ['native', 'custom']) {
+  test(`expanded replies in a ${kind} modal are selectable and editable`, async ({ page }) => {
+    await load(page, 'replies-dialog.html');
+    await page.keyboard.press('Escape'); // close the initial extension UI
+    await page.locator(`#show-${kind}`).click();
+    await page.evaluate(() => window.toggleExtension());
+    const modal = page.locator(`#${kind}-replies`);
+    await expect(modal.locator('[data-selective-zoom=panel]')).toHaveCount(1);
+    const reply = modal.locator('[data-ad-rendering-role=comment_message] span').first();
+    await reply.hover();
+    const highlight = modal.locator('[data-selective-zoom=highlight]').locator('div');
+    const replyBox = await reply.boundingBox();
+    const highlightBox = await highlight.boundingBox();
+    expect(Math.abs(replyBox.x - highlightBox.x)).toBeLessThan(2);
+    expect(Math.abs(replyBox.y - highlightBox.y)).toBeLessThan(2);
+    await reply.click();
+    const panel = modal.locator('[data-selective-zoom=panel]');
+    await expect(panel.locator('#status')).toContainText('2 elemento(s)');
+    await panel.locator('#size').fill('28');
+    await expect(panel.locator('#size')).toBeFocused();
+    await expect(reply).toHaveCSS('font-size', '28px');
+    await expect(page.locator('body > [data-ad-rendering-role=comment_message] span')).toHaveCSS('font-size', '16px');
+    await panel.locator('#save').click();
+    await expect(page.locator('[data-selective-zoom=panel]')).toHaveCount(0);
+    await modal.locator('.more').click();
+    await expect(modal.locator('[data-ad-rendering-role=comment_message] span').last()).toHaveCSS('font-size', '28px');
+    await modal.locator('.close').click();
+    await page.locator(`#show-${kind}`).click();
+    await expect(reply).toHaveCSS('font-size', '28px');
+    await page.evaluate(() => window.toggleExtension());
+    await modal.locator('[data-selective-zoom=panel] #list-button').click();
+    await modal.getByRole('button', { name: /Remover regra/ }).click();
+    await expect(reply).toHaveCSS('font-size', '16px');
+  });
+}
+test('toolbar can reopen after a replies window closes during preview', async ({ page }) => {
+  await load(page, 'replies-dialog.html');
+  await page.keyboard.press('Escape');
+  await page.locator('#show-custom').click();
+  await page.evaluate(() => window.toggleExtension());
+  await page.locator('#custom-replies [data-ad-rendering-role=comment_message] span').first().click();
+  await page.locator('[data-selective-zoom=panel] #size').fill('30');
+  await page.locator('#custom-replies .close').click();
+  await page.evaluate(() => window.toggleExtension());
+  await expect(page.locator('html > [data-selective-zoom=panel]')).toHaveCount(1);
+  await expect(page.locator('#custom-replies [data-selective-zoom=panel]')).toHaveCount(0);
+  await expect(page.locator('#custom-replies [data-ad-rendering-role=comment_message] span').first()).toHaveCSS('font-size', '16px');
+});

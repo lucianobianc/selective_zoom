@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Replies em janela sobre o feed — fixture representativa</title>
+<style>
+  body { font:16px sans-serif; padding:24px; }
+  dialog, .reply-window { background:white; color:#172554; padding:24px; width:620px; max-height:75vh; overflow:auto; }
+  .reply-window { position:fixed; inset:50px auto auto 50px; transform:translateX(12px); z-index:2147483647; border:2px solid #172554; }
+  [hidden] { display:none!important; }
+  .reply-text, [data-ad-rendering-role=comment_message] { font-size:16px; margin:12px 0; }
+</style>
+<h1>Feed ao fundo</h1>
+<div data-ad-rendering-role="comment_message"><span>Comentário no feed que não deve mudar</span></div>
+<button id="show-native">Abrir replies em diálogo nativo</button>
+<button id="show-custom">Abrir replies em janela com foco restrito</button>
+<dialog id="native-replies">
+  <h2>Respostas em janela nativa</h2>
+  <div data-ad-rendering-role="comment_message"><span>Primeira resposta da janela</span></div>
+  <div data-ad-rendering-role="comment_message"><span>Segunda resposta da janela</span></div>
+  <button class="more">Carregar outra resposta</button>
+  <button class="close">Fechar replies</button>
+</dialog>
+<div role="dialog" aria-modal="true" aria-label="Replies" class="reply-window" id="custom-replies" hidden>
+  <h2>Respostas em janela sobre o feed</h2>
+  <div data-ad-rendering-role="comment_message"><span>Primeira resposta da janela</span></div>
+  <div data-ad-rendering-role="comment_message"><span>Segunda resposta da janela</span></div>
+  <button class="more">Carregar outra resposta</button>
+  <button class="close">Fechar replies</button>
+</div>
+<script>
+  const native = document.querySelector('#native-replies');
+  const custom = document.querySelector('#custom-replies');
+  document.querySelector('#show-native').onclick = () => native.showModal();
+  document.querySelector('#show-custom').onclick = () => { custom.hidden = false; custom.querySelector('button').focus(); };
+  native.querySelector('.close').onclick = () => native.close();
+  custom.querySelector('.close').onclick = () => { custom.hidden = true; };
+  for (const modal of [native, custom]) modal.querySelector('.more').onclick = () => {
+    const body = document.createElement('div'); body.setAttribute('data-ad-rendering-role', 'comment_message');
+    const span = document.createElement('span'); span.textContent = 'Resposta adicionada depois de salvar';
+    body.append(span); modal.insertBefore(body, modal.querySelector('.more'));
+  };
+  // Model a site-level focus trap, independent of the extension.
+  document.addEventListener('focusin', (event) => {
+    if (!custom.hidden && !custom.contains(event.target)) custom.querySelector('button').focus();
+  });
+</script>
+</html>

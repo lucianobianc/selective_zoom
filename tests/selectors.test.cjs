@@ -14,3 +14,7 @@ test('scoped social selectors are accepted without allowing arbitrary CSS', () =
   for (const value of ['ytd-comment-view-model yt-attributed-string[id="content-text"]', 'div[data-ad-rendering-role="comment_message"]', 'div[role="article"] > div > div.x193iq5w.x1lliihq', 'span[data-testid="UFI2Comment/body"]']) assert.equal(selectors.valid(value), true, value);
   for (const value of ['body > div > span', 'div[role="article"] *', 'div[onclick="alert"]', 'div[role="article"] span:hover', 'div[data-testid="x"];body{display:none}', 'div[role="article"] > input,body']) assert.equal(selectors.valid(value), false, value);
 });
+test('modal scope allows only known presence attributes', () => {
+  for (const value of ['dialog[open] div[data-ad-rendering-role="comment_message"]', 'div[role="dialog"] p.comment-text', 'div[popover] p.comment-text']) assert.equal(selectors.valid(value), true, value);
+  for (const value of ['div[onclick] p.comment-text', 'dialog[open] p.comment-text,body', 'dialog[open] p:hover']) assert.equal(selectors.valid(value), false, value);
+});

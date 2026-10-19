@@ -1,6 +1,25 @@
 (() => {
   "use strict";
   const SZ = globalThis.SelectiveZoom ||= {};
+  SZ.modalFor = (element) => {
+    const visible = (node) => node.getClientRects().length && node.getAttribute('aria-hidden') !== 'true' &&
+      getComputedStyle(node).visibility === 'visible' &&
+      (!node.checkVisibility || node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }));
+    const enclosing = element?.closest('dialog[open],[role="dialog"],[role="alertdialog"],[popover]');
+    if (enclosing && visible(enclosing)) return enclosing;
+    // Native modal dialogs/popovers live in the browser's top layer. A large
+    // z-index outside that layer cannot make the extension UI interactive.
+    const topLayer = [...document.querySelectorAll('dialog:modal,[popover]:popover-open')].filter(visible).at(-1);
+    return topLayer || [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].filter(visible).at(-1) || null;
+  };
+  SZ.modalSelector = (modal) => {
+    if (['dialog', 'alertdialog'].includes(modal.getAttribute('role'))) return `${modal.localName}[role="${modal.getAttribute('role')}"]`;
+    return modal.localName === 'dialog' ? 'dialog[open]' : `${modal.localName}[popover]`;
+  };
+  SZ.mountUI = (host, element) => {
+    const parent = SZ.modalFor(element) || document.documentElement;
+    if (host.parentElement !== parent) parent.append(host);
+  };
   const excluded = "script,style,noscript,template,input,textarea,select,option,button,iframe,object,embed,[contenteditable]:not([contenteditable=false]),[role=textbox],[data-selective-zoom]";
   SZ.isTextElement = (element) => element instanceof Element &&
     !["HTML", "BODY"].includes(element.tagName) && !element.closest(excluded) &&
@@ -83,9 +102,9 @@
       this.host.style.cssText = "all:initial!important;position:fixed!important;inset:0!important;pointer-events:none!important;z-index:2147483646!important";
       const shadow = this.host.attachShadow({ mode: "open" });
       this.box = document.createElement("div");
-      this.box.style.cssText = "display:none;position:fixed;outline:3px solid #2563eb;background:rgb(37 99 235 / 12%);pointer-events:none";
+      this.box.style.cssText = "display:none;position:absolute;outline:3px solid #2563eb;background:rgb(37 99 235 / 12%);pointer-events:none";
       shadow.append(this.box);
-      document.documentElement.append(this.host);
+      SZ.mountUI(this.host);
       window.addEventListener("pointermove", this.move, true);
       window.addEventListener("pointerdown", this.suppress, true);
       window.addEventListener("pointerup", this.suppress, true);
@@ -98,13 +117,17 @@
       this.target = SZ.isTextElement(element) ? element : null;
       this.box.style.display = "none";
       if (!SZ.isTextElement(element)) return;
+      SZ.mountUI(this.host, element);
       let rect = element.getBoundingClientRect();
       if (!rect.width || !rect.height) {
         const range = document.createRange();
         range.selectNodeContents(element);
         rect = range.getBoundingClientRect();
       }
-      Object.assign(this.box.style, { display: "block", left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+      const layer = this.host.getBoundingClientRect();
+      const scaleX = this.host.offsetWidth ? layer.width / this.host.offsetWidth : 1;
+      const scaleY = this.host.offsetHeight ? layer.height / this.host.offsetHeight : 1;
+      Object.assign(this.box.style, { display: "block", left: `${(rect.left - layer.left) / scaleX}px`, top: `${(rect.top - layer.top) / scaleY}px`, width: `${rect.width / scaleX}px`, height: `${rect.height / scaleY}px` });
     }
     stop() {
       this.active = false;

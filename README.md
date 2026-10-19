@@ -12,6 +12,8 @@ Extensão para **Firefox desktop 140+** que ajusta o tamanho de grupos de textos
 6. Para rejeitar a proposta, use **Selecionar outro texto**, **Cancelar** ou **Escape**. Cancelar restaura a apresentação anterior.
 7. Abra **Regras deste site** para remover regras e desfazer seus efeitos imediatamente, inclusive em outras abas abertas.
 
+Em janelas de replies sobre o feed, o painel e o destaque ficam dentro da janela ativa; novas regras criadas ali se limitam aos comentários de janelas desse tipo, sem atingir o feed ao fundo.
+
 O botão da extensão também fecha o painel e cancela a prévia. O atalho sugerido é **Ctrl+Shift+Y** (personalizável em Gerenciar atalhos das extensões). No modo de seleção, **↑/↓** percorrem os textos e **Enter** escolhe; **Tab** navega nos controles do painel e **Escape** cancela. O foco volta ao elemento anterior ao fechar.
 
 Se você já salvou uma regra ampla demais no YouTube, remova-a em **Regras deste site** antes de selecionar o comentário novamente. As regras antigas são preservadas; a atualização melhora a criação das próximas regras.
@@ -78,7 +80,7 @@ npm run build
 - A proposta aceita até 500 correspondências e o modo de seleção por teclado percorre até 500 textos. Há no máximo 100 regras por origem.
 - Se o conjunto de elementos mudar antes de salvar, o primeiro clique atualiza a prévia; confira os novos destaques e clique em Salvar novamente. Depois de salva, uma regra acompanha o seletor: mudanças futuras no site podem invalidá-la ou mudar sua abrangência.
 - Regras sobrepostas obedecem à especificidade e à ordem da cascata CSS. Estilos inline com `!important` podem impedir o ajuste; mudanças de fonte também podem alterar quebras de linha e alturas.
-- O painel usa Shadow DOM para isolar seus estilos. O site ainda pode remover elementos inseridos no documento ou colocá-los sob uma camada de tela cheia.
+- O painel usa Shadow DOM para isolar seus estilos. O site ainda pode remover elementos inseridos no documento. Diálogos nativos, popovers e janelas identificadas por `role="dialog"`/`alertdialog` são reconhecidos; janelas sem esses marcadores podem exigir um ajuste adicional.
 - Há reconhecimento de estruturas de comentários do YouTube e de marcadores de texto/contêineres usados em variantes do Facebook. Isso não garante funcionamento em todas as versões desses sites; os testes locais usam DOM representativo. Não há sincronização, exportação ou suporte móvel.
 
 Veja [SPEC.md](SPEC.md) e [ROADMAP.md](ROADMAP.md) para o escopo original.

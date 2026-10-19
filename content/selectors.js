@@ -9,7 +9,7 @@
   const tag = '[a-z][a-z0-9-]*';
   const token = '[a-zA-Z_][a-zA-Z0-9_-]{0,79}';
   const attributes = 'id|data-testid|data-test|role|dir|data-ad-rendering-role|data-ad-comet-preview';
-  const qualifier = `(?:\\.${token}|\\[(?:${attributes})="[a-zA-Z0-9_:/.-]{1,100}"\\])`;
+  const qualifier = `(?:\\.${token}|\\[(?:${attributes})="[a-zA-Z0-9_:/.-]{1,100}"\\]|\\[(?:open|popover)\\])`;
   const segment = `${tag}(?:${qualifier}){0,12}`;
   const syntax = new RegExp(`^${segment}(?:(?: > | )${segment}){0,8}$`);
   const ownSelector = (element, attr) => {
@@ -62,7 +62,10 @@
     },
     propose(element) {
       if (!SZ.isTextElement(element) || !/^[a-z][a-z0-9-]*$/.test(element.localName)) return null;
+      const modal = SZ.modalFor(element);
+      const prefix = modal ? `${SZ.modalSelector(modal)} ` : '';
       const attempt = (selector, target = element) => {
+        selector = prefix + selector;
         const elements = this.matches(selector);
         return elements.includes(target) ? { selector, elements } : null;
       };
@@ -88,7 +91,7 @@
       let ancestor = element.parentElement;
       const path = [];
       const weakScopes = [];
-      for (let depth = 0; ancestor && depth < 7 && !['BODY', 'HTML'].includes(ancestor.tagName); depth++, ancestor = ancestor.parentElement) {
+      for (let depth = 0; ancestor && ancestor !== modal && depth < 7 && !['BODY', 'HTML'].includes(ancestor.tagName); depth++, ancestor = ancestor.parentElement) {
         const anchor = strongScope(ancestor);
         if (anchor) {
           // Preserve the relative structure, not a global tag or utility class.

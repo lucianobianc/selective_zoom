@@ -1,13 +1,13 @@
 # Validação do MVP
 
-Execução em 18/10/2026, com Node.js 24.19.0, Chromium do ambiente e **Firefox ESR 140.15.0** no Linux. O Firefox instalou temporariamente o ZIP produzido por `npm run build`, em um perfil novo e descartável. A automação acionou o botão real da barra de ferramentas; não houve mocks de APIs na suíte Firefox.
+Atualizado em 19/10/2026, com Node.js 24.19.0, Chromium do ambiente e **Firefox ESR 140.15.0** no Linux. O Firefox instalou temporariamente o ZIP produzido por `npm run build`, em um perfil novo e descartável. A automação acionou o botão real da barra de ferramentas; não houve mocks de APIs na suíte Firefox.
 
 | Verificação | Resultado |
 | --- | --- |
 | Instalação reproduzível com `npm ci` | Passou |
-| `npm test` | 9 testes passaram |
-| `npm run test:browser` | 17 testes passaram, interface com Chromium e APIs simuladas |
-| `tests/firefox_smoke.py` | 7 testes passaram, extensão real no Firefox |
+| `npm test` | 10 testes passaram |
+| `npm run test:browser` | 20 testes passaram, interface com Chromium e APIs simuladas |
+| `tests/firefox_smoke.py` | 8 testes passaram, extensão real no Firefox |
 | `npm run lint:extension` | 0 erros, 0 notices e 1 aviso de compatibilidade Android |
 | `npm run build` | ZIP gerado; contém somente scripts, manifesto e licença |
 | YouTube real | Bloqueado pelo proxy do ambiente: CONNECT retornou HTTP 403 |
@@ -30,6 +30,8 @@ O aviso `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` refere-se à declaraç�
 - Seleção por teclado, Escape e exclusão de controles sensíveis.
 - Falha segura para classe instável isolada sem contexto; tamanho fora do intervalo bloqueado.
 - Prévia, gravação, recarga e remoção em página com CSP restritiva.
+- Replies em diálogo modal nativo e janela com foco restrito: seleção, edição, persistência, novos replies, remoção e retorno ao feed.
+- Destaque alinhado em janela com transformação CSS e regra limitada à janela, preservando o feed ao fundo.
 - Em DOM representativo: comentários do YouTube separados de títulos e autores que compartilham classes.
 - Em DOM representativo: marcadores de mensagens e caminhos dentro de artigos para textos com classes geradas.
 - Seleção por coordenadas em texto com `pointer-events:none` e `display:contents`, sem atingir o botão adjacente.
@@ -40,7 +42,7 @@ Os testes de lógica e de interface também cobrem validação de seletores cont
 
 A tentativa de acesso a `https://www.youtube.com/` recebeu HTTP 403 do proxy antes de alcançar o site. A validação automatizada no site real continua pendente. O usuário relatou funcionamento no YouTube, mas com agrupamento indevido de outras categorias de texto; a mudança passa a usar o corpo do comentário dentro do contêiner de comentário. Os testes dessa mudança usam DOM representativo, não uma captura autenticada do site.
 
-No Facebook, o usuário relatou que nenhum texto era selecionado e que aparecia a mensagem de impossibilidade de criar uma regra segura. Foram ampliadas a detecção do texto sob o ponteiro e as alternativas de seletor em classes geradas/contêineres semânticos. Não houve sessão autenticada de validação no Facebook; o resultado na página do usuário ainda precisa ser confirmado. As fixtures de `social-text.html` são exemplos estruturais explicitamente identificados, não evidência de compatibilidade com todo o DOM atual dos sites.
+No Facebook, o usuário relatou que nenhum texto era selecionado e que aparecia a mensagem de impossibilidade de criar uma regra segura. Foram ampliadas a detecção do texto sob o ponteiro e as alternativas de seletor em classes geradas/contêineres semânticos. O usuário confirmou funcionamento nos comentários normais do Facebook e no YouTube após essa alteração. Depois relatou outra falha em replies abertos em uma janela sobre o feed. A correção para janelas modais foi validada no Firefox com fixtures representativas, incluindo foco restrito; os replies na página real do usuário ainda precisam ser conferidos. Não houve sessão autenticada de validação automatizada no Facebook. As fixtures de `social-text.html` são exemplos estruturais explicitamente identificados, não evidência de compatibilidade com todo o DOM atual dos sites.
 
 Para concluir a etapa em uma máquina com acesso ao YouTube: carregar a extensão, abrir um vídeo com comentários, selecionar um texto de comentário, conferir os destaques, ajustar/salvar, recarregar e remover a regra. Registrar qualquer falha de seletor ou limitação do DOM antes de propor uma correção específica. Consentimento, autenticação, estrutura dinâmica e disponibilidade dos comentários podem afetar esse teste.
 

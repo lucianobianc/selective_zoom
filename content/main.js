@@ -28,6 +28,7 @@
     if (panel) panel.get('save').disabled = busy || !proposal || !SZ.validSize(size) || !!loadError;
   };
   const editElement = (element) => {
+    SZ.mountUI(panel.host, element);
     proposal = SZ.Selectors.propose(element);
     if (!proposal) return panel.unavailable();
     size = Math.min(128, Math.max(6, Math.round(parseFloat(getComputedStyle(element).fontSize))));
@@ -62,8 +63,10 @@
       contextPoint = null;
     }
     if (panel) {
+      const activeParent = SZ.modalFor() || document.documentElement;
+      const wasVisible = panel.host.parentElement === activeParent && panel.host.getClientRects().length;
       close();
-      if (!fromContextMenu) return;
+      if (!fromContextMenu && wasVisible) return;
     }
     previousFocus = document.activeElement;
     panel = new SZ.Panel({

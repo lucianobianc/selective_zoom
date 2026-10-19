@@ -288,6 +288,38 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.assertEqual(self.size('.layer-hit button'), original_button_size)
         self.escape()
 
+    def test_08_expanded_replies_dialogs(self):
+        for kind in ['native', 'custom']:
+            with self.subTest(kind=kind):
+                self.navigate(self.urls[0].replace('comments.html', 'replies-dialog.html'))
+                self.driver.find_element(By.ID, f'show-{kind}').click()
+                self.toggle()
+                self.assertTrue(self.driver.execute_script("return document.querySelector(arguments[0]).contains(document.querySelector('[data-selective-zoom=panel]'))", f'#{kind}-replies'))
+                reply = f'#{kind}-replies [data-ad-rendering-role="comment_message"] span'
+                self.edit(reply, 28)
+                self.assertIn('2 elemento(s)', self.control('status').text)
+                self.wait_size('body > [data-ad-rendering-role="comment_message"] span', 16)
+                self.assertTrue(self.driver.execute_script("return document.querySelector('[data-selective-zoom=panel]').shadowRoot.activeElement?.id === 'size'"))
+                self.save()
+                self.driver.find_element(By.CSS_SELECTOR, f'#{kind}-replies .more').click()
+                sizes = self.driver.execute_script("return [...document.querySelectorAll(arguments[0])].map(e=>getComputedStyle(e).fontSize)", reply)
+                self.assertEqual(sizes, ['28px', '28px', '28px'])
+                self.driver.find_element(By.CSS_SELECTOR, f'#{kind}-replies .close').click()
+                self.driver.find_element(By.ID, f'show-{kind}').click()
+                self.wait_size(reply, 28)
+                self.toggle()
+                self.control('list-button').click()
+                self.wait.until(lambda _d: len(self.control('rules').find_elements(By.TAG_NAME, 'li')) == 1)
+                self.control('rules').find_element(By.TAG_NAME, 'button').click()
+                self.wait_size(reply, 16)
+                self.escape()
+                self.toggle()
+                self.edit(reply, 30)
+                self.driver.find_element(By.CSS_SELECTOR, f'#{kind}-replies .close').click()
+                self.toggle()
+                self.assertTrue(self.driver.execute_script("return document.querySelector('[data-selective-zoom=panel]').parentElement === document.documentElement"))
+                self.escape()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -56,7 +56,7 @@
         this.onSize(size);
       });
       this.get("save").addEventListener("click", () => this.onSave?.());
-      document.documentElement.append(this.host);
+      SZ.mountUI(this.host);
     }
     get(id) { return this.root.getElementById(id); }
     selecting() {
