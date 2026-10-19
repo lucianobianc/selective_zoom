@@ -6,9 +6,9 @@ Extensão para **Firefox desktop 140+** que ajusta o tamanho de grupos de textos
 
 1. Abra `about:debugging#/runtime/this-firefox` no Firefox.
 2. Clique em **Carregar extensão temporária** e escolha `manifest.json`.
-3. Abra uma página HTTP(S), recarregue-a se já estava aberta e clique no botão **Selective Zoom** da extensão. Você também pode clicar com o botão direito sobre um texto e escolher **Selective Zoom — ajustar texto** para abrir a edição diretamente nele. Se necessário, fixe-o na barra pelo menu de extensões.
+3. Abra uma página HTTP(S), recarregue-a se já estava aberta e clique no botão **Selective Zoom** da extensão. Você também pode clicar com o botão direito sobre um texto e escolher **Selective Zoom** para abrir a edição diretamente nele. Se necessário, fixe-o na barra pelo menu de extensões.
 4. Passe o mouse sobre um texto e clique para selecioná-lo. O clique não abre o link da página.
-5. Confira os elementos destacados, a quantidade e as amostras no painel. Ajuste o tamanho entre **6 e 128 px** e marque a confirmação antes de **Salvar**.
+5. Confira os elementos destacados, a quantidade e as amostras no painel. Ajuste o tamanho entre **6 e 128 px** e clique em **Salvar**.
 6. Para rejeitar a proposta, use **Selecionar outro texto**, **Cancelar** ou **Escape**. Cancelar restaura a apresentação anterior.
 7. Abra **Regras deste site** para remover regras e desfazer seus efeitos imediatamente, inclusive em outras abas abertas.
 
@@ -72,9 +72,9 @@ npm run build
 
 - Páginas internas do Firefox, páginas restritas pela Mozilla e PDFs do visualizador embutido não aceitam os scripts. Nesses casos, o título do botão informa a indisponibilidade. Recarregue abas antigas após instalar a extensão.
 - Iframes e Shadow DOM de terceiros ficam fora do MVP. Campos, botões e conteúdo editável não podem ser selecionados.
-- Os seletores são heurísticos e conservadores: classes numéricas ou com aparência de hash são descartadas; não há fallback amplo por nome de tag. A confirmação humana é necessária, pois o DOM não garante equivalência semântica.
+- Os seletores são heurísticos e conservadores: classes numéricas ou com aparência de hash são descartadas; não há fallback amplo por nome de tag. Confira os destaques antes de salvar, pois o DOM não garante equivalência semântica.
 - A proposta aceita até 500 correspondências e o modo de seleção por teclado percorre até 500 textos. Há no máximo 100 regras por origem.
-- Se o conjunto de elementos mudar antes de salvar, é preciso conferir e confirmar novamente. Depois de salva, uma regra acompanha o seletor: mudanças futuras no site podem invalidá-la ou mudar sua abrangência.
+- Se o conjunto de elementos mudar antes de salvar, o primeiro clique atualiza a prévia; confira os novos destaques e clique em Salvar novamente. Depois de salva, uma regra acompanha o seletor: mudanças futuras no site podem invalidá-la ou mudar sua abrangência.
 - Regras sobrepostas obedecem à especificidade e à ordem da cascata CSS. Estilos inline com `!important` podem impedir o ajuste; mudanças de fonte também podem alterar quebras de linha e alturas.
 - O painel usa Shadow DOM para isolar seus estilos. O site ainda pode remover elementos inseridos no documento ou colocá-los sob uma camada de tela cheia.
 - Não há ajustes específicos para YouTube ou Facebook, nem sincronização, exportação ou suporte móvel.

@@ -109,7 +109,6 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.wait_size(selector, size)
 
     def save(self):
-        self.control("confirm").click()
         self.control("save").click()
         self.wait.until(lambda _d: self.panel() is None)
 
@@ -126,7 +125,7 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.escape()
         self.toggle()
         self.edit(".comment-text", 30)
-        self.assertFalse(self.control("save").is_enabled())
+        self.assertTrue(self.control("save").is_enabled())
         self.control("cancel").click()
         self.wait_size(".comment-text", 16)
         self.driver.refresh()
@@ -192,7 +191,6 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.assertIn("Não foi possível", self.control("status").text)
         self.control("reselect").click()
         self.edit(".comment-text", 24)
-        self.control("confirm").click()
         self.control("size").clear()
         self.control("size").send_keys("129")
         self.assertFalse(self.control("save").is_enabled())
@@ -224,7 +222,7 @@ class FirefoxExtensionTests(unittest.TestCase):
         self.driver.set_context('chrome')
         try:
             self.wait.until(lambda d: d.execute_script("return document.getElementById('contentAreaContextMenu').state === 'open'"))
-            menu = self.wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'menuitem[label="Selective Zoom — ajustar texto"]'))
+            menu = self.wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'menuitem[label="Selective Zoom"]'))
             self.driver.execute_script("arguments[0].doCommand();document.getElementById('contentAreaContextMenu').hidePopup()", menu)
         finally:
             self.driver.set_context('content')

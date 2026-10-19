@@ -56,7 +56,7 @@ test('preview changes matching text only and cancel restores original styles', a
   await expect(page.locator('.comment-text').nth(1)).toHaveCSS('font-size', '30px');
   await expect(page.locator('h1')).toHaveCSS('font-size', '32px');
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('3 elemento(s)');
-  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeEnabled();
   await page.locator('[data-selective-zoom=panel] #cancel').click();
   await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
   expect(await page.locator('.comment-text').first().getAttribute('style')).toBeNull();
@@ -76,12 +76,12 @@ test('unstable classes have no unsafe tag-only fallback', async ({ page }) => {
   await page.locator('.comment-text').first().click();
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('3 elemento(s)');
 });
-test('saving requires confirmation, survives reload and styles new matching content', async ({ page }) => {
+test('saving directly survives reload and styles new matching content', async ({ page }) => {
   await load(page);
+  await expect(page.locator('[data-selective-zoom=panel] input[type=checkbox]')).toHaveCount(0);
   await page.locator('.comment-text').first().click();
   await page.locator('[data-selective-zoom=panel] #size').fill('26');
-  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
-  await page.locator('[data-selective-zoom=panel] #confirm').check();
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeEnabled();
   await page.locator('[data-selective-zoom=panel] #save').click();
   await expect(page.locator('[data-selective-zoom=panel]')).toHaveCount(0);
   await load(page);
@@ -94,7 +94,6 @@ test('saving requires confirmation, survives reload and styles new matching cont
 test('save failure stays visible and invalid sizes cannot be saved', async ({ page }) => {
   await load(page);
   await page.locator('.comment-text').first().click();
-  await page.locator('[data-selective-zoom=panel] #confirm').check();
   await page.locator('[data-selective-zoom=panel] #size').fill('129');
   await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
   await page.locator('[data-selective-zoom=panel] #size').fill('22');
@@ -104,15 +103,15 @@ test('save failure stays visible and invalid sizes cannot be saved', async ({ pa
   await page.keyboard.press('Escape');
   await expect(page.locator('.comment-text').first()).toHaveCSS('font-size', '16px');
 });
-test('DOM changes between review and save require renewed confirmation', async ({ page }) => {
+test('DOM changes between preview and save require another Save click', async ({ page }) => {
   await load(page);
   await page.locator('.comment-text').first().click();
-  await page.locator('[data-selective-zoom=panel] #confirm').check();
   await page.evaluate(() => document.querySelector('#add-comment').click());
   await page.locator('[data-selective-zoom=panel] #save').click();
   await expect(page.locator('[data-selective-zoom=panel] #status')).toContainText('A página mudou: 4');
-  await expect(page.locator('[data-selective-zoom=panel] #confirm')).not.toBeChecked();
-  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeDisabled();
+  await expect(page.locator('[data-selective-zoom=panel] #save')).toBeEnabled();
+  await page.locator('[data-selective-zoom=panel] #save').click();
+  await expect(page.locator('[data-selective-zoom=panel]')).toHaveCount(0);
 });
 test('two independent rules coexist and deleting one restores only its text', async ({ page }) => {
   await load(page);
@@ -120,7 +119,6 @@ test('two independent rules coexist and deleting one restores only its text', as
     if (!(await page.locator('[data-selective-zoom=panel]').count())) await page.evaluate(() => window.toggleExtension());
     await page.locator(selector).first().click();
     await page.locator('[data-selective-zoom=panel] #size').fill(size);
-    await page.locator('[data-selective-zoom=panel] #confirm').check();
     await page.locator('[data-selective-zoom=panel] #save').click();
   }
   await page.evaluate(() => window.toggleExtension());

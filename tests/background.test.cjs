@@ -44,7 +44,7 @@ test('context menu registers for websites and forwards the native target to the 
   const sent = [];
   background({ onMenuCreated: (menu) => { item = menu; }, onMenuListener: (listener) => { click = listener; }, onSendMessage: (...args) => sent.push(args) });
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(item.title, 'Selective Zoom — ajustar texto');
+  assert.equal(item.title, 'Selective Zoom');
   assert.ok(item.contexts.includes('selection'));
   await click({ menuItemId: item.id, targetElementId: 42, frameId: 0 }, { id: 7 });
   assert.equal(sent[0][0], 7);

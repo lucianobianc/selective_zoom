@@ -17,7 +17,7 @@ browser.browserAction.onClicked.addListener((tab) => openPanel(tab, { type: "sel
 const contextMenuId = "selective-zoom-adjust-text";
 browser.menus.removeAll().then(() => browser.menus.create({
   id: contextMenuId,
-  title: "Selective Zoom — ajustar texto",
+  title: "Selective Zoom",
   contexts: ["page", "selection", "link"],
   documentUrlPatterns: ["http://*/*", "https://*/*"]
 })).catch((error) => console.error("Não foi possível registrar o menu do Selective Zoom:", error));
